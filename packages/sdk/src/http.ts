@@ -28,7 +28,7 @@ const errorPayloadSchema = z.object({
 });
 
 export class HttpClient {
-  private readonly baseUrl: string;
+  public readonly baseUrl: string;
   private readonly getAccessToken: () => string | null;
   private readonly onUnauthorized: (() => void) | undefined;
   private readonly fetchImpl: typeof fetch;
@@ -38,6 +38,15 @@ export class HttpClient {
     this.getAccessToken = options.getAccessToken ?? (() => null);
     this.onUnauthorized = options.onUnauthorized;
     this.fetchImpl = options.fetchImpl ?? fetch;
+  }
+
+  authHeader(): Record<string, string> {
+    const token = this.getAccessToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    return this.fetchImpl(input, init);
   }
 
   async request<TResponseSchema extends z.ZodTypeAny>(

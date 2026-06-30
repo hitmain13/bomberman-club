@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info: { title: "007-sightings", version: "1.0.0" }
+paths:
+  /sightings:
+    get: { tags: [sightings] }
+    post: { tags: [sightings] }
+  /sightings/{id}:
+    get: { tags: [sightings] }
+    delete: { tags: [sightings] }

@@ -1,0 +1,20 @@
+openapi: 3.1.0
+info: { title: "006-uploads", version: "1.0.0" }
+paths:
+  /uploads:
+    post:
+      tags: [uploads]
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "200": { description: ok }
+        "422": { description: validation }
+  /uploads/{id}:
+    get: { tags: [uploads] }
+    delete: { tags: [uploads] }

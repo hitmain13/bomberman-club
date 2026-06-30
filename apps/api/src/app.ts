@@ -4,6 +4,8 @@ import { authController } from "@/modules/auth";
 import { carsController, userCarsController } from "@/modules/cars";
 import { catalogController } from "@/modules/catalog";
 import { garagesController } from "@/modules/garages";
+import { sightingsController } from "@/modules/sightings";
+import { uploadsController } from "@/modules/uploads";
 import { usersController } from "@/modules/users";
 import { authPlugin } from "@/plugins/auth.plugin";
 import { corsPlugin } from "@/plugins/cors.plugin";
@@ -26,5 +28,7 @@ export function createApp() {
     .use(garagesController)
     .use(carsController)
     .use(userCarsController)
-    .use(catalogController);
+    .use(catalogController)
+    .use(uploadsController)
+    .use(sightingsController);
 }

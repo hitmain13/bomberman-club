@@ -9,3 +9,6 @@ export type { UpdateMeInput } from "./resources/users";
 export { GaragesResource } from "./resources/garages";
 export { CarsResource } from "./resources/cars";
 export { CatalogResource } from "./resources/catalog";
+export { UploadsResource } from "./resources/uploads";
+export { SightingsResource } from "./resources/sightings";
+export type { SightingListResult } from "./resources/sightings";

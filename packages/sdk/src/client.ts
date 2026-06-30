@@ -3,6 +3,8 @@ import { AuthResource } from "./resources/auth";
 import { CarsResource } from "./resources/cars";
 import { CatalogResource } from "./resources/catalog";
 import { GaragesResource } from "./resources/garages";
+import { SightingsResource } from "./resources/sightings";
+import { UploadsResource } from "./resources/uploads";
 import { UsersResource } from "./resources/users";
 
 export class BombermanClient {
@@ -11,6 +13,8 @@ export class BombermanClient {
   public readonly garages: GaragesResource;
   public readonly cars: CarsResource;
   public readonly catalog: CatalogResource;
+  public readonly uploads: UploadsResource;
+  public readonly sightings: SightingsResource;
 
   constructor(options: HttpClientOptions) {
     const http = new HttpClient(options);
@@ -19,6 +23,8 @@ export class BombermanClient {
     this.garages = new GaragesResource(http);
     this.cars = new CarsResource(http);
     this.catalog = new CatalogResource(http);
+    this.uploads = new UploadsResource(http);
+    this.sightings = new SightingsResource(http);
   }
 }
 
