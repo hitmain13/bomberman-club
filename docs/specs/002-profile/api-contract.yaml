@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info: { title: "002-profile", version: "1.0.0" }
+paths:
+  /users/me:
+    get: { summary: "Retorna usuário autenticado", tags: [users] }
+    patch: { summary: "Atualiza usuário autenticado", tags: [users] }
+  /users/{username}:
+    get: { summary: "Retorna usuário público por username", tags: [users] }
+components: {}
