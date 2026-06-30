@@ -27,4 +27,12 @@ export const queryKeys = {
     list: (period: SightingPeriod) => ["sightings", "list", period] as const,
     detail: (id: string) => ["sightings", "detail", id] as const,
   },
+  social: {
+    likes: (targetType: string, targetId: string) =>
+      ["social", "likes", targetType, targetId] as const,
+    comments: (targetType: string, targetId: string) =>
+      ["social", "comments", targetType, targetId] as const,
+    follow: (username: string) => ["social", "follow", username] as const,
+    notifications: () => ["social", "notifications"] as const,
+  },
 } as const;

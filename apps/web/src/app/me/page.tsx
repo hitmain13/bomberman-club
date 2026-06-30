@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/atoms/Button";
+import { Icon } from "@/components/atoms/Icon";
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { CarList, useMyCars } from "@/features/garage";
@@ -64,9 +65,16 @@ function MyProfileContent(): JSX.Element {
           </Link>
         }
         secondaryAction={
-          <Button variant="ghost" fullWidth onClick={() => void signOut()}>
-            Sair
-          </Button>
+          <div className="flex gap-2">
+            <Link href="/notifications" className="flex-1">
+              <Button variant="ghost" fullWidth leadingIcon={<Icon name="bell" />}>
+                Notificações
+              </Button>
+            </Link>
+            <Button variant="ghost" onClick={() => void signOut()}>
+              Sair
+            </Button>
+          </div>
         }
       />
       <ProfileStats

@@ -13,6 +13,7 @@ import {
   ProfileTabs,
   usePublicProfile,
 } from "@/features/profile";
+import { FollowButton } from "@/features/social";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
 
@@ -68,13 +69,7 @@ function UserProfileContent({ username }: { username: string }): JSX.Element {
           city: data.city,
           bio: data.bio,
         }}
-        primaryAction={
-          isOwn ? null : (
-            <Button fullWidth disabled>
-              Seguir
-            </Button>
-          )
-        }
+        primaryAction={isOwn ? null : <FollowButton username={data.username} />}
         secondaryAction={
           isOwn ? null : (
             <Button variant="secondary" fullWidth disabled>

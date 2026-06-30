@@ -1,0 +1,11 @@
+openapi: 3.1.0
+info: { title: "010-social", version: "1.0.0" }
+paths:
+  /likes/{targetType}/{targetId}/toggle: { post: { tags: [social] } }
+  /favorites/{targetType}/{targetId}/toggle: { post: { tags: [social] } }
+  /comments: { post: { tags: [social] } }
+  /comments/{targetType}/{targetId}: { get: { tags: [social] } }
+  /comments/{id}: { delete: { tags: [social] } }
+  /follows/{username}/toggle: { post: { tags: [social] } }
+  /notifications: { get: { tags: [social] } }
+  /notifications/{id}/read: { post: { tags: [social] } }

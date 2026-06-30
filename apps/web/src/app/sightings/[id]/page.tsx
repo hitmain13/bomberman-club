@@ -10,6 +10,7 @@ import { Icon } from "@/components/atoms/Icon";
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { formatDateTime, useDeleteSighting, useSighting } from "@/features/sightings";
+import { CommentsThread, LikeButton } from "@/features/social";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
 
@@ -50,6 +51,10 @@ function Content({ id }: { id: string }): JSX.Element {
       <p className="text-xs uppercase tracking-wider text-fg-muted">
         Lat {data.latitude.toFixed(5)} · Lng {data.longitude.toFixed(5)}
       </p>
+      <div className="flex items-center gap-3">
+        <LikeButton targetType="SIGHTING" targetId={data.id} />
+      </div>
+      <CommentsThread targetType="SIGHTING" targetId={data.id} currentUserId={user?.id ?? null} />
       {isOwner ? (
         <Button
           variant="danger"
