@@ -1,0 +1,16 @@
+process.env.NODE_ENV ??= "test";
+process.env.PORT ??= "3333";
+process.env.API_BASE_URL ??= "http://localhost:3333";
+process.env.WEB_ORIGIN ??= "http://localhost:3000";
+process.env.DATABASE_URL ??= "postgresql://bomberman:bomberman@localhost:5432/bomberman_test";
+process.env.JWT_ACCESS_SECRET ??= "test-access-secret-min-32-characters-len-ok";
+process.env.JWT_REFRESH_SECRET ??= "test-refresh-secret-min-32-characters-len-ok";
+process.env.COOKIE_DOMAIN ??= "localhost";
+process.env.COOKIE_SECURE ??= "false";
+process.env.S3_ENDPOINT ??= "http://localhost:9000";
+process.env.S3_REGION ??= "us-east-1";
+process.env.S3_ACCESS_KEY_ID ??= "bomberman";
+process.env.S3_SECRET_ACCESS_KEY ??= "bomberman";
+process.env.S3_BUCKET ??= "bomberman-uploads";
+process.env.S3_PUBLIC_BASE_URL ??= "http://localhost:9000/bomberman-uploads";
+process.env.LOG_LEVEL ??= "fatal";

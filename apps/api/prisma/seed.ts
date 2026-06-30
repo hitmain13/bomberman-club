@@ -1,4 +1,4 @@
-import { PrismaClient, SpecValueType } from "@prisma/client";
+import { PrismaClient, type SpecValueType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -134,14 +134,16 @@ async function seedSpecDefinitions(): Promise<void> {
 async function main(): Promise<void> {
   await seedPartCategories();
   await seedSpecDefinitions();
-  console.log(
-    `Seed ok: ${partCategories.length} part categories, ${specDefinitions.length} spec definitions.`,
+  process.stdout.write(
+    `Seed ok: ${partCategories.length} part categories, ${specDefinitions.length} spec definitions.\n`,
   );
 }
 
 main()
-  .catch((error) => {
-    console.error(error);
+  .catch((error: unknown) => {
+    process.stderr.write(
+      `${error instanceof Error ? (error.stack ?? error.message) : String(error)}\n`,
+    );
     process.exit(1);
   })
   .finally(() => {
