@@ -1,0 +1,10 @@
+{
+  "extends": "@bomberman/config/tsconfig.api.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src", "prisma", "tests"]
+}

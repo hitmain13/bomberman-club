@@ -1,0 +1,364 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Identity & Access
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id           String @id @default(cuid())
+  username     String @unique
+  email        String @unique
+  passwordHash String
+  role         Role   @default(USER)
+
+  bio            String?
+  city           String?
+  avatarUploadId String? @unique
+  avatar         Upload? @relation("UserAvatar", fields: [avatarUploadId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  garages        Garage[]
+  refreshTokens  RefreshToken[]
+  uploads        Upload[]        @relation("UploadOwner")
+  sightings      Sighting[]
+  comments       Comment[]
+  likes          Like[]
+  favorites      Favorite[]
+  followers      Follow[]        @relation("Followed")
+  following      Follow[]        @relation("Follower")
+  notifications  Notification[]  @relation("NotificationRecipient")
+  actorOf        Notification[]  @relation("NotificationActor")
+  passwordResets PasswordReset[]
+
+  @@index([createdAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordReset {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Garage / Cars
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Garage {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cars Car[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+enum Fuel {
+  GASOLINE
+  ETHANOL
+  FLEX
+  DIESEL
+  ELECTRIC
+  HYBRID
+  OTHER
+}
+
+model Car {
+  id       String @id @default(cuid())
+  garageId String
+  garage   Garage @relation(fields: [garageId], references: [id], onDelete: Cascade)
+
+  nickname   String
+  brand      String
+  model      String
+  generation String?
+  year       Int
+  fuel       Fuel
+  engine     String
+
+  weightKg     Int
+  horsepowerHp Int
+  torqueNm     Int
+  currentKm    Int
+
+  plate String?
+
+  coverUploadId String? @unique
+  cover         Upload? @relation("CarCover", fields: [coverUploadId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  images         CarImage[]
+  parts          CarPart[]
+  specifications CarSpecificationValue[]
+
+  @@index([garageId])
+  @@index([brand, model])
+  @@index([horsepowerHp])
+  @@index([weightKg])
+}
+
+model CarImage {
+  id        String   @id @default(cuid())
+  carId     String
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  uploadId  String
+  upload    Upload   @relation("CarImageUpload", fields: [uploadId], references: [id], onDelete: Restrict)
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([carId, uploadId])
+  @@index([carId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Configurability (EAV) — Specifications + reusable Parts
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum SpecValueType {
+  STRING
+  NUMBER
+  BOOLEAN
+  ENUM
+}
+
+model SpecificationDefinition {
+  id          String        @id @default(cuid())
+  key         String        @unique
+  name        String
+  type        SpecValueType
+  unit        String?
+  category    String?
+  enumOptions String[]      @default([])
+  createdAt   DateTime      @default(now())
+
+  values CarSpecificationValue[]
+}
+
+model CarSpecificationValue {
+  id           String                  @id @default(cuid())
+  carId        String
+  car          Car                     @relation(fields: [carId], references: [id], onDelete: Cascade)
+  definitionId String
+  definition   SpecificationDefinition @relation(fields: [definitionId], references: [id], onDelete: Restrict)
+
+  valueString  String?
+  valueNumber  Float?
+  valueBoolean Boolean?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([carId, definitionId])
+  @@index([definitionId])
+}
+
+model PartCategory {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  createdAt DateTime @default(now())
+
+  parts Part[]
+}
+
+model Part {
+  id           String       @id @default(cuid())
+  categoryId   String
+  category     PartCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  manufacturer String
+  name         String
+  createdAt    DateTime     @default(now())
+
+  carParts CarPart[]
+
+  @@unique([categoryId, manufacturer, name])
+  @@index([categoryId])
+}
+
+model CarPart {
+  id          String    @id @default(cuid())
+  carId       String
+  car         Car       @relation(fields: [carId], references: [id], onDelete: Cascade)
+  partId      String
+  part        Part      @relation(fields: [partId], references: [id], onDelete: Restrict)
+  installedAt DateTime?
+  description String?
+  createdAt   DateTime  @default(now())
+
+  @@index([carId])
+  @@index([partId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Media
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Upload {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation("UploadOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  bucketKey String   @unique
+  url       String
+  mime      String
+  size      Int
+  width     Int?
+  height    Int?
+  createdAt DateTime @default(now())
+
+  userAvatar User?      @relation("UserAvatar")
+  carCover   Car?       @relation("CarCover")
+  carImages  CarImage[] @relation("CarImageUpload")
+  sighting   Sighting?  @relation("SightingPhoto")
+
+  @@index([ownerId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sightings (flagrados)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Sighting {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadId    String   @unique
+  upload      Upload   @relation("SightingPhoto", fields: [uploadId], references: [id], onDelete: Restrict)
+  title       String
+  description String?
+  latitude    Float
+  longitude   Float
+  occurredAt  DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([occurredAt])
+  @@index([latitude, longitude])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Social
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum TargetType {
+  PROFILE
+  CAR
+  SIGHTING
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("Followed", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Comment {
+  id         String     @id @default(cuid())
+  authorId   String
+  author     User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  targetType TargetType
+  targetId   String
+  content    String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([targetType, targetId])
+  @@index([authorId])
+}
+
+model Like {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetType TargetType
+  targetId   String
+  createdAt  DateTime   @default(now())
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+}
+
+model Favorite {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetType TargetType
+  targetId   String
+  createdAt  DateTime   @default(now())
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+}
+
+enum NotificationType {
+  FOLLOW
+  LIKE
+  COMMENT
+  MENTION
+  SIGHTING_NEW
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  type       NotificationType
+  actorId    String?
+  actor      User?            @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetType TargetType?
+  targetId   String?
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
+}
