@@ -27,3 +27,8 @@ export const sightingsController = new Elysia({ prefix: "/sightings" })
     await sightingsService.remove(params.id, user.id);
     return { ok: true };
   });
+
+export const userSightingsController = new Elysia({ prefix: "/users" }).get(
+  "/:username/sightings",
+  ({ params }) => sightingsService.listByUsername(params.username),
+);

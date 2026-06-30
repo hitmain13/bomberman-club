@@ -11,7 +11,7 @@ import { Spinner } from "@/components/atoms/Spinner";
 import { FormField } from "@/components/molecules/FormField";
 
 import { useUploadImage } from "../../hooks/use-sighting-mutations";
-import { type NewSightingValues, newSightingSchema } from "../../schemas";
+import { type NewSightingPayload, type NewSightingValues, newSightingSchema } from "../../schemas";
 
 import { styles } from "./NewSightingForm.styles";
 import type { NewSightingFormProps } from "./NewSightingForm.types";
@@ -35,7 +35,7 @@ export function NewSightingForm({
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm<NewSightingValues>({
+  } = useForm<NewSightingValues, undefined, NewSightingPayload>({
     resolver: zodResolver(newSightingSchema),
     defaultValues: {
       uploadId: "",
@@ -43,7 +43,7 @@ export function NewSightingForm({
       description: "",
       latitude: 0,
       longitude: 0,
-      occurredAt: new Date().toISOString(),
+      occurredAt: localDatetimeNow(),
     },
   });
 
@@ -80,7 +80,7 @@ export function NewSightingForm({
           description: values.description ?? null,
           latitude: values.latitude,
           longitude: values.longitude,
-          occurredAt: new Date(values.occurredAt).toISOString(),
+          occurredAt: values.occurredAt,
         }),
       )}
     >
@@ -150,7 +150,6 @@ export function NewSightingForm({
       <FormField
         label="Data e hora"
         type="datetime-local"
-        defaultValue={localDatetimeNow()}
         errorMessage={errors.occurredAt?.message}
         {...register("occurredAt")}
       />

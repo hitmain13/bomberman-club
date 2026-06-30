@@ -15,6 +15,10 @@
 - E2E Playwright para fluxos críticos (login → criar carro → criar flagrado → curtir/comentar).
 - Sentry/Datadog para observabilidade.
 
+## Tooling
+
+- Reativar `next dev --turbo` quando Turbopack passar a suportar o layout symlinked do Bun workspaces (issue tracker da Vercel). Webpack funcionando enquanto isso.
+
 ## V1.1 (produto)
 
 - Login social Google/Apple real.

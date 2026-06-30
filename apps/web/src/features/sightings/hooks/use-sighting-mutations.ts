@@ -14,6 +14,7 @@ export function useCreateSighting() {
     mutationFn: (input: SightingInput) => apiClient.sightings.create(input),
     onSuccess: (sighting) => {
       queryClient.invalidateQueries({ queryKey: ["sightings"] });
+      queryClient.invalidateQueries({ queryKey: ["discovery"] });
       queryClient.setQueryData(queryKeys.sightings.detail(sighting.id), sighting);
       router.replace(`/sightings/${sighting.id}`);
     },
@@ -28,6 +29,7 @@ export function useDeleteSighting(id: string) {
     onSuccess: () => {
       queryClient.removeQueries({ queryKey: queryKeys.sightings.detail(id) });
       queryClient.invalidateQueries({ queryKey: ["sightings"] });
+      queryClient.invalidateQueries({ queryKey: ["discovery"] });
       router.replace("/sightings");
     },
   });

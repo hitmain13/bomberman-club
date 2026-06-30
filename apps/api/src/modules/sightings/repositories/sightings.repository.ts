@@ -27,6 +27,15 @@ export class SightingsRepository {
     });
   }
 
+  listByUsername(username: string): Promise<SightingWithRelations[]> {
+    return prisma.sighting.findMany({
+      where: { user: { username } },
+      include: includeRelations,
+      orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+      take: 50,
+    });
+  }
+
   findById(id: string): Promise<SightingWithRelations | null> {
     return prisma.sighting.findUnique({ where: { id }, include: includeRelations });
   }

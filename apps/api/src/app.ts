@@ -5,7 +5,7 @@ import { carsController, userCarsController } from "@/modules/cars";
 import { catalogController } from "@/modules/catalog";
 import { discoveryController } from "@/modules/discovery";
 import { garagesController } from "@/modules/garages";
-import { sightingsController } from "@/modules/sightings";
+import { sightingsController, userSightingsController } from "@/modules/sightings";
 import { socialController } from "@/modules/social";
 import { uploadsController } from "@/modules/uploads";
 import { usersController } from "@/modules/users";
@@ -33,6 +33,7 @@ export function createApp() {
     .use(catalogController)
     .use(uploadsController)
     .use(sightingsController)
+    .use(userSightingsController)
     .use(socialController)
     .use(discoveryController);
 }

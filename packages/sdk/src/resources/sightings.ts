@@ -38,6 +38,13 @@ export class SightingsResource {
     });
   }
 
+  listByUser(username: string): Promise<SightingResponse[]> {
+    return this.http.request({
+      path: `/users/${encodeURIComponent(username)}/sightings`,
+      responseSchema: z.array(sightingResponseSchema),
+    });
+  }
+
   get(id: string): Promise<SightingResponse> {
     return this.http.request({
       path: `/sightings/${encodeURIComponent(id)}`,

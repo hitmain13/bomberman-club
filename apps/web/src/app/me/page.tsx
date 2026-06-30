@@ -8,6 +8,7 @@ import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { CarList, useMyCars } from "@/features/garage";
 import { ProfileHeader, ProfileStats, type ProfileTab, ProfileTabs } from "@/features/profile";
+import { SightingCard, useUserSightings } from "@/features/sightings";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
 
@@ -25,21 +26,45 @@ function MyCarsTab(): JSX.Element {
   return <CarList cars={data} />;
 }
 
+function MySightingsTab({ username }: { username: string }): JSX.Element {
+  const { data, isLoading, error } = useUserSightings(username);
+  if (isLoading) {
+    return <StatePanel kind="loading" />;
+  }
+  if (error || !data) {
+    return <StatePanel kind="error" />;
+  }
+  if (data.length === 0) {
+    return <StatePanel kind="empty" title="Sem flagrados ainda." />;
+  }
+  return (
+    <ul className="flex flex-col gap-4">
+      {data.map((sighting) => (
+        <li key={sighting.id}>
+          <SightingCard sighting={sighting} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function MyProfileContent(): JSX.Element {
   const { user } = useAuth();
   const { data: cars } = useMyCars();
+  const { data: sightings } = useUserSightings(user?.username ?? "");
 
   if (!user) {
     return <StatePanel kind="loading" />;
   }
 
   const carsCount = cars?.length ?? 0;
+  const sightingsCount = sightings?.length ?? 0;
   const tabs: ReadonlyArray<ProfileTab> = [
     { id: "cars", label: "Carros", content: <MyCarsTab /> },
     {
       id: "sightings",
       label: "Flagrados",
-      content: <StatePanel kind="empty" title="Sem flagrados ainda." />,
+      content: <MySightingsTab username={user.username} />,
     },
     {
       id: "gallery",
@@ -86,7 +111,7 @@ function MyProfileContent(): JSX.Element {
       <ProfileStats
         items={[
           { label: "Carros", value: carsCount },
-          { label: "Flagrados", value: 0 },
+          { label: "Flagrados", value: sightingsCount },
           { label: "Seguidores", value: 0 },
         ]}
       />

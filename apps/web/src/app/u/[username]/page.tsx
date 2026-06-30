@@ -13,6 +13,7 @@ import {
   ProfileTabs,
   usePublicProfile,
 } from "@/features/profile";
+import { SightingCard, useUserSightings } from "@/features/sightings";
 import { FollowButton } from "@/features/social";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
@@ -35,10 +36,33 @@ function UserCarsTab({ username }: { username: string }): JSX.Element {
   return <CarList cars={data} />;
 }
 
+function UserSightingsTab({ username }: { username: string }): JSX.Element {
+  const { data, isLoading, error } = useUserSightings(username);
+  if (isLoading) {
+    return <StatePanel kind="loading" />;
+  }
+  if (error || !data) {
+    return <StatePanel kind="error" />;
+  }
+  if (data.length === 0) {
+    return <StatePanel kind="empty" title="Sem flagrados." />;
+  }
+  return (
+    <ul className="flex flex-col gap-4">
+      {data.map((sighting) => (
+        <li key={sighting.id}>
+          <SightingCard sighting={sighting} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function UserProfileContent({ username }: { username: string }): JSX.Element {
   const { user: currentUser } = useAuth();
   const { data, isLoading, error } = usePublicProfile(username);
   const { data: cars } = useUserCars(username);
+  const { data: sightings } = useUserSightings(username);
 
   if (isLoading) {
     return <StatePanel kind="loading" />;
@@ -49,12 +73,13 @@ function UserProfileContent({ username }: { username: string }): JSX.Element {
 
   const isOwn = currentUser?.username === data.username;
   const carsCount = cars?.length ?? 0;
+  const sightingsCount = sightings?.length ?? 0;
   const tabs: ReadonlyArray<ProfileTab> = [
     { id: "cars", label: "Carros", content: <UserCarsTab username={username} /> },
     {
       id: "sightings",
       label: "Flagrados",
-      content: <StatePanel kind="empty" title="Sem flagrados." />,
+      content: <UserSightingsTab username={username} />,
     },
     { id: "gallery", label: "Galeria", content: <StatePanel kind="empty" title="Sem fotos." /> },
   ];
@@ -81,7 +106,7 @@ function UserProfileContent({ username }: { username: string }): JSX.Element {
       <ProfileStats
         items={[
           { label: "Carros", value: carsCount },
-          { label: "Flagrados", value: 0 },
+          { label: "Flagrados", value: sightingsCount },
           { label: "Seguidores", value: 0 },
         ]}
       />

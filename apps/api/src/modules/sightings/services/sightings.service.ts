@@ -17,6 +17,11 @@ interface ListParams {
 }
 
 export class SightingsService {
+  async listByUsername(username: string): Promise<SightingResponse[]> {
+    const rows = await sightingsRepository.listByUsername(username);
+    return rows.map(toSightingResponse);
+  }
+
   async list(params: ListParams): Promise<SightingListResult> {
     const after = periodStartDate(params.period);
     const rows = await sightingsRepository.list({

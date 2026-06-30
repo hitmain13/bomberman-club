@@ -1,8 +1,24 @@
 import { sightingInputSchema } from "@bomberman/types";
 import { z } from "zod";
 
-export const newSightingSchema = sightingInputSchema.omit({ uploadId: true }).extend({
-  uploadId: z.string().min(1, "Envie uma foto antes de publicar."),
-});
+const localDatetimeSchema = z
+  .string()
+  .min(1, "Informe a data e hora.")
+  .transform((value, ctx) => {
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Data e hora inválidas." });
+      return z.NEVER;
+    }
+    return parsed.toISOString();
+  });
 
-export type NewSightingValues = z.infer<typeof newSightingSchema>;
+export const newSightingSchema = sightingInputSchema
+  .omit({ uploadId: true, occurredAt: true })
+  .extend({
+    uploadId: z.string().min(1, "Envie uma foto antes de publicar."),
+    occurredAt: localDatetimeSchema,
+  });
+
+export type NewSightingValues = z.input<typeof newSightingSchema>;
+export type NewSightingPayload = z.output<typeof newSightingSchema>;

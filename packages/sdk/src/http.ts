@@ -37,7 +37,8 @@ export class HttpClient {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.getAccessToken = options.getAccessToken ?? (() => null);
     this.onUnauthorized = options.onUnauthorized;
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    const provided = options.fetchImpl ?? globalThis.fetch;
+    this.fetchImpl = provided.bind(globalThis);
   }
 
   authHeader(): Record<string, string> {

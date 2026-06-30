@@ -26,6 +26,7 @@ export const queryKeys = {
   sightings: {
     list: (period: SightingPeriod) => ["sightings", "list", period] as const,
     detail: (id: string) => ["sightings", "detail", id] as const,
+    byUser: (username: string) => ["sightings", "byUser", username] as const,
   },
   social: {
     likes: (targetType: string, targetId: string) =>
