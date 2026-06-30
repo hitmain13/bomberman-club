@@ -5,6 +5,7 @@ import { use } from "react";
 import { Button } from "@/components/atoms/Button";
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
+import { CarList, useUserCars } from "@/features/garage";
 import {
   ProfileHeader,
   ProfileStats,
@@ -19,9 +20,24 @@ interface PageProps {
   params: Promise<{ username: string }>;
 }
 
+function UserCarsTab({ username }: { username: string }): JSX.Element {
+  const { data, isLoading, error } = useUserCars(username);
+  if (isLoading) {
+    return <StatePanel kind="loading" />;
+  }
+  if (error || !data) {
+    return <StatePanel kind="error" />;
+  }
+  if (data.length === 0) {
+    return <StatePanel kind="empty" title="Nenhum carro publicado." />;
+  }
+  return <CarList cars={data} />;
+}
+
 function UserProfileContent({ username }: { username: string }): JSX.Element {
   const { user: currentUser } = useAuth();
   const { data, isLoading, error } = usePublicProfile(username);
+  const { data: cars } = useUserCars(username);
 
   if (isLoading) {
     return <StatePanel kind="loading" />;
@@ -31,12 +47,9 @@ function UserProfileContent({ username }: { username: string }): JSX.Element {
   }
 
   const isOwn = currentUser?.username === data.username;
+  const carsCount = cars?.length ?? 0;
   const tabs: ReadonlyArray<ProfileTab> = [
-    {
-      id: "cars",
-      label: "Carros",
-      content: <StatePanel kind="empty" title="Nenhum carro publicado." />,
-    },
+    { id: "cars", label: "Carros", content: <UserCarsTab username={username} /> },
     {
       id: "sightings",
       label: "Flagrados",
@@ -72,7 +85,7 @@ function UserProfileContent({ username }: { username: string }): JSX.Element {
       />
       <ProfileStats
         items={[
-          { label: "Carros", value: 0 },
+          { label: "Carros", value: carsCount },
           { label: "Flagrados", value: 0 },
           { label: "Seguidores", value: 0 },
         ]}

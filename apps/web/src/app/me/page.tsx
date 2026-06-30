@@ -5,21 +5,36 @@ import Link from "next/link";
 import { Button } from "@/components/atoms/Button";
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
+import { CarList, useMyCars } from "@/features/garage";
 import { ProfileHeader, ProfileStats, type ProfileTab, ProfileTabs } from "@/features/profile";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
 
+function MyCarsTab(): JSX.Element {
+  const { data, isLoading, error } = useMyCars();
+  if (isLoading) {
+    return <StatePanel kind="loading" />;
+  }
+  if (error || !data) {
+    return <StatePanel kind="error" />;
+  }
+  if (data.length === 0) {
+    return <StatePanel kind="empty" title="Você ainda não cadastrou carros." />;
+  }
+  return <CarList cars={data} />;
+}
+
 function MyProfileContent(): JSX.Element {
   const { user, signOut } = useAuth();
+  const { data: cars } = useMyCars();
+
   if (!user) {
     return <StatePanel kind="loading" />;
   }
+
+  const carsCount = cars?.length ?? 0;
   const tabs: ReadonlyArray<ProfileTab> = [
-    {
-      id: "cars",
-      label: "Carros",
-      content: <StatePanel kind="empty" title="Você ainda não cadastrou carros." />,
-    },
+    { id: "cars", label: "Carros", content: <MyCarsTab /> },
     {
       id: "sightings",
       label: "Flagrados",
@@ -56,7 +71,7 @@ function MyProfileContent(): JSX.Element {
       />
       <ProfileStats
         items={[
-          { label: "Carros", value: 0 },
+          { label: "Carros", value: carsCount },
           { label: "Flagrados", value: 0 },
           { label: "Seguidores", value: 0 },
         ]}

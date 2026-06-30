@@ -1,6 +1,8 @@
 import { Elysia } from "elysia";
 
 import { authController } from "@/modules/auth";
+import { carsController, userCarsController } from "@/modules/cars";
+import { garagesController } from "@/modules/garages";
 import { usersController } from "@/modules/users";
 import { authPlugin } from "@/plugins/auth.plugin";
 import { corsPlugin } from "@/plugins/cors.plugin";
@@ -19,5 +21,8 @@ export function createApp() {
     .use(authPlugin)
     .get("/health", () => ({ ok: true, service: "bomberman-api" }))
     .use(authController)
-    .use(usersController);
+    .use(usersController)
+    .use(garagesController)
+    .use(carsController)
+    .use(userCarsController);
 }

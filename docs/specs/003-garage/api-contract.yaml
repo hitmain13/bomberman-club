@@ -1,0 +1,9 @@
+openapi: 3.1.0
+info: { title: "003-garage", version: "1.0.0" }
+paths:
+  /cars/mine:
+    get: { summary: "Lista os carros do usuário autenticado", tags: [cars] }
+  /users/{username}/cars:
+    get: { summary: "Lista os carros publicados de um usuário", tags: [cars] }
+  /garages/mine:
+    get: { summary: "Lista as garagens do usuário autenticado", tags: [garages] }
