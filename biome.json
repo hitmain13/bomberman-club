@@ -59,14 +59,16 @@
     {
       "include": [
         "**/*.stories.tsx",
-        "**/*.config.{ts,js,mjs}",
+        "**/*.config.ts",
+        "**/*.config.js",
+        "**/*.config.mjs",
+        "**/*.config.cjs",
         "**/app/**/page.tsx",
         "**/app/**/layout.tsx",
         "**/app/**/loading.tsx",
         "**/app/**/error.tsx",
         "**/app/**/not-found.tsx",
         "**/app/**/route.ts",
-        "**/next.config.{js,ts,mjs}",
         "**/middleware.ts"
       ],
       "linter": {
