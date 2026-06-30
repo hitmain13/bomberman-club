@@ -1,0 +1,24 @@
+---
+description: Convenções de Git e commits.
+alwaysApply: true
+---
+
+# Git
+
+## Conventional Commits (em inglês)
+
+Tipos: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `build`, `chore`, `ci`, `style`.
+
+Formato: `tipo(escopo): mensagem em inglês, imperativo, ≤ 72 chars`.
+
+Escopos comuns: `monorepo`, `web`, `api`, `db`, `auth`, `profile`, `garage`, `cars`, `sightings`, `social`, `ui`, `sdk`, `config`, `ci`, `docs`.
+
+## Quando commitar
+
+- Ao fim de cada milestone.
+- Ao fim de cada feature concluída.
+- Nunca commitar com testes vermelhos, typecheck quebrado, ou `console.error` no client.
+
+## Branches
+
+Trabalhar em `master` (single-developer flow). Tag por milestone: `m1`, `m2`, ...

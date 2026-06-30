@@ -1,0 +1,48 @@
+---
+description: Fidelidade ao wireframe (pixel-perfect mobile-first).
+alwaysApply: true
+globs: "apps/web/**/*.{ts,tsx,css}"
+---
+
+# Pixel-Perfect
+
+## Fonte da verdade visual
+
+`wireframe.png` (na raiz). Cada uma das 21 telas está nele com mobile-first 375px.
+
+## Mapeamento tela → feature
+
+| Tela                          | Feature              |
+| ----------------------------- | -------------------- |
+| 01 Splash, 02 Login, 03 Registro, 04 Recuperar senha | auth                 |
+| 05 Home/Feed                  | feed                 |
+| 06 Explorar, 21 Busca         | explore / search     |
+| 07 Mapa                       | map                  |
+| 08 Perfil, 09 Meus carros, 11 Editar perfil | profile              |
+| 10 Detalhe carro, 12 Criar/editar carro, 13 Peças, 14 Especificações | garage / cars        |
+| 15 Lista flagrados, 16 Detalhe flagrado, 17 Novo flagrado | sightings            |
+| 18 Comentários, 19 Notificações | social               |
+| 20 Configurações              | settings             |
+
+## Bottom-nav fixo
+
+`Início` · `Explorar` · `Novo +` · `Mapa` · `Perfil` (centro com botão circular destacado, conforme legenda do wireframe).
+
+## Estados padronizados (painel direito do wireframe)
+
+- `Loading` (skeleton)
+- `Empty` (vazio)
+- `Error` (algo deu errado)
+
+Todos como organisms reutilizáveis (`StateLoading`, `StateEmpty`, `StateError`).
+
+## Validação visual
+
+Antes de marcar tela como concluída, comparar com o recorte do wireframe. Conferir:
+
+- Hierarquia tipográfica (titles, body, captions).
+- Espaçamento (grid de 4/8px).
+- Posicionamento de ícones e botões.
+- Ordem dos elementos.
+- Estados (loading/empty/error).
+- Cores via tokens (sem hex solto).

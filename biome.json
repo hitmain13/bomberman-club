@@ -1,0 +1,81 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+  "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+  "files": {
+    "ignoreUnknown": true,
+    "ignore": [
+      "**/node_modules",
+      "**/.next",
+      "**/dist",
+      "**/build",
+      "**/.turbo",
+      "**/coverage",
+      "**/playwright-report",
+      "**/.playwright-mcp",
+      "**/generated",
+      "**/prisma/migrations"
+    ]
+  },
+  "organizeImports": { "enabled": true },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsoleLog": "warn"
+      },
+      "style": {
+        "useImportType": "error",
+        "useNodejsImportProtocol": "error",
+        "useConst": "error",
+        "noDefaultExport": "error"
+      },
+      "complexity": {
+        "noBannedTypes": "error"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "include": [
+        "**/*.stories.tsx",
+        "**/*.config.{ts,js,mjs}",
+        "**/app/**/page.tsx",
+        "**/app/**/layout.tsx",
+        "**/app/**/loading.tsx",
+        "**/app/**/error.tsx",
+        "**/app/**/not-found.tsx",
+        "**/app/**/route.ts",
+        "**/next.config.{js,ts,mjs}",
+        "**/middleware.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+---
+description: Type-safety estrito. Proibições rígidas de TypeScript.
+alwaysApply: true
+globs: "**/*.{ts,tsx}"
+---
+
+# Type Strict
+
+## TS config obrigatório (herdado de `@bomberman/config`)
+
+- `strict: true`
+- `noUncheckedIndexedAccess: true`
+- `exactOptionalPropertyTypes: true`
+- `noImplicitOverride: true`
+- `noFallthroughCasesInSwitch: true`
+- `noUnusedLocals: true`
+- `noUnusedParameters: true`
+
+## Proibido (commit é rejeitado)
+
+- `any`
+- `unknown` (exceto em type guards onde imediatamente refinado)
+- `as Foo` (type assertion) — exceto `as const`
+- `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck`
+- `eslint-disable`, `biome-ignore` sem justificativa em comentário
+- `// TODO`, `// FIXME`, `// HACK`, `// XXX`
+- Código comentado
+- Default export em componentes React
+
+## Obrigatório
+
+- Tipos derivados de Zod via `z.infer<typeof Schema>`.
+- Type guards (`function isFoo(v: Foo | Bar): v is Foo`) quando precisar refinar.
+- DTOs com tipos explícitos nas fronteiras (controller/SDK).

@@ -1,0 +1,51 @@
+---
+description: Atomic Design + estrutura de componente no frontend.
+alwaysApply: true
+globs: "apps/web/**/*.{ts,tsx}"
+---
+
+# Frontend — Atomic Design
+
+## Hierarquia
+
+- `atoms/` — primitivos: Button, Input, Avatar, Icon, Text, Badge, Spinner.
+- `molecules/` — pequenas combinações: FormField, SearchBar, MetricItem, TabBar.
+- `organisms/` — blocos complexos: CarCard, ProfileHeader, SightingCard, BottomNav, Header.
+- `templates/` — layouts de página (estrutura sem dados).
+- `app/` — páginas Next 15 (App Router), Server Components por padrão.
+
+## Estrutura de pasta de componente (OBRIGATÓRIA, sem exceção)
+
+```
+ComponentName/
+  ComponentName.tsx        # Server Component por padrão; "use client" só se houver hook/estado/evento
+  ComponentName.types.ts   # interface ComponentNameProps
+  ComponentName.styles.ts  # classes Tailwind / cva variants
+  ComponentName.test.tsx   # render + 1 asserção mínima
+  ComponentName.stories.tsx# Meta + Default + estados relevantes
+  index.ts                 # export { ComponentName } from "./ComponentName"; export type * from "./ComponentName.types";
+```
+
+Mesmo que um arquivo pareça "vazio", ele é criado com conteúdo mínimo válido.
+
+## Estado
+
+- Estado de servidor: **TanStack Query** (nunca `useEffect` + `fetch`).
+- Estado global pequeno (filtros, UI): **Zustand** atômico.
+- Auth/theme: **Context API** em `shared/contexts/`.
+- Forms: **React Hook Form + Zod**.
+
+## Performance
+
+- Server Component por padrão.
+- `"use client"` somente quando necessário (estado/evento/hook do client).
+- Imagens via `next/image`.
+- Mobile-first 375px, depois `sm/md/lg/xl`.
+
+## Proibido
+
+- Tabelas para listar dados (usar cards/grid).
+- Componente com mais de uma responsabilidade.
+- Valores mágicos de spacing/cor — sempre via tokens do Tailwind/design-tokens.
+- `useEffect` para fetch.
+- Default export.

@@ -1,0 +1,8 @@
+{
+  "extends": "@bomberman/config/tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["DOM", "ES2023"]
+  },
+  "include": ["src"]
+}

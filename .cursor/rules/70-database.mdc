@@ -1,0 +1,45 @@
+---
+description: Regras de modelagem do banco (Prisma + Postgres).
+alwaysApply: true
+globs: "**/schema.prisma"
+---
+
+# Database
+
+## Convenções gerais
+
+- IDs: `cuid()`.
+- Timestamps: `createdAt` (`@default(now())`) e `updatedAt` (`@updatedAt`).
+- Relações: definir os **dois lados** com `@relation`.
+- Índices: `@@index` em FKs e colunas de filtro/ordenação frequentes.
+- Únicos: `@unique` ou `@@unique`.
+- Enums em SCREAMING_SNAKE_CASE.
+
+## EAV puro (specs do carro)
+
+- `SpecificationDefinition(key UNIQUE, name, type, unit?, category?, enumOptions?)`.
+- `CarSpecificationValue(carId, definitionId, valueString?, valueNumber?, valueBoolean?)` com `@@unique([carId, definitionId])`.
+- A coluna preenchida é determinada por `definition.type`. Validação por Zod no service.
+- Adicionar nova spec = inserir linha em `SpecificationDefinition` (sem migration).
+
+## Peças reaproveitáveis
+
+- `PartCategory` → `Part(categoryId, manufacturer, name)` com `@@unique([categoryId, manufacturer, name])`.
+- `CarPart(carId, partId, installedAt?, description?)`.
+
+## Polimorfismo social
+
+- `targetType` enum `PROFILE|CAR|SIGHTING` + `targetId` string.
+- Sem FK nativa — índice composto `@@index([targetType, targetId])`.
+- `Like` e `Favorite` com `@@unique([userId, targetType, targetId])`.
+
+## Antes de criar uma tabela
+
+Perguntar:
+
+1. Essa informação já existe em outra tabela?
+2. Pode ser reaproveitada via polimorfismo?
+3. Pode ser modelada como EAV?
+4. Há risco de duplicação?
+
+Apenas após responder cabe migration.

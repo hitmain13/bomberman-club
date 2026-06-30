@@ -1,0 +1,41 @@
+---
+description: Clean Architecture / DDD-lite no backend.
+alwaysApply: true
+globs: "apps/api/**/*.ts"
+---
+
+# Backend — Clean Architecture
+
+## Estrutura obrigatória de cada módulo
+
+```
+src/modules/<modulo>/
+  controllers/<modulo>.controller.ts   # rotas Elysia, valida com schema, sem regra de negócio
+  services/<modulo>.service.ts         # regra de negócio, guard clause + return early
+  repositories/<modulo>.repository.ts  # ÚNICO lugar que importa Prisma
+  entities/<modulo>.entity.ts          # tipo de domínio puro
+  dto/<modulo>.dto.ts                  # tipos de entrada/saída (z.infer)
+  schemas/<modulo>.schema.ts           # zod schemas
+  mappers/<modulo>.mapper.ts           # entity -> dto
+  factories/<modulo>.factory.ts        # opcional, quando aplicável
+  builders/<modulo>.builder.ts         # opcional, quando aplicável
+  tests/<modulo>.service.test.ts
+  index.ts                             # exporta o controller registrável
+```
+
+## Regras
+
+- Controller **nunca** importa Prisma diretamente.
+- Service **nunca** monta resposta HTTP.
+- Repository **nunca** contém regra de negócio.
+- Toda regra de negócio mora em `service` com guard clauses no topo.
+- Toda entrada da API é validada por schema Zod (Standard Schema do Elysia).
+- Erros customizados em `common/errors/` (`NotFoundError`, `UnauthorizedError`, `ValidationError`, etc.). Handler central converte em HTTP.
+
+## Patterns obrigatórios
+
+- **Guard clause + return early**: nunca `if (ok) { ... } else { ... }` com else encadeado.
+- **Builder**: para entidades complexas (`CarBuilder().withTurbo().withIntercooler().build()`).
+- **Factory**: para criar peças por categoria (`PartFactory.createTurbo(...)`).
+- **Repository**: abstrai persistência. Métodos por intenção (`findByOwner`, não `find`).
+- **Mapper**: `toEntity`, `toDTO`, `toResponse`.

@@ -1,0 +1,42 @@
+---
+description: Spec Driven Development — pipeline por feature.
+alwaysApply: true
+---
+
+# SDD — Spec Driven Development
+
+Nenhuma feature é codificada antes de a spec estar aprovada.
+
+## Estrutura de cada spec (`docs/specs/00X-<slug>/`)
+
+- `specification.md` — visão geral, escopo, fora de escopo, dependências
+- `acceptance-criteria.md` — critérios em Gherkin (Given/When/Then)
+- `api-contract.yaml` — contrato OpenAPI mínimo dos endpoints
+- `database.md` — modelos, índices, migrations
+- `ui.md` — telas envolvidas no `wireframe.png`, estados, eventos
+- `test-plan.md` — unit / integration / e2e
+
+## Pipeline por feature (NÃO inverter)
+
+1. Ler `specification.md`
+2. Ler `acceptance-criteria.md`
+3. Ler `api-contract.yaml`
+4. Ler `test-plan.md`
+5. Criar testes (podem falhar inicialmente)
+6. Implementar Backend
+7. Executar testes (até verde)
+8. Implementar SDK (`packages/sdk`)
+9. Implementar Frontend (componentes + páginas, pixel-perfect com wireframe)
+10. Criar Stories
+11. Criar testes faltantes
+12. Executar Browser QA
+13. Refatorar (uma única vez, ver `execution_strategy.md`)
+14. Marcar como concluída no `.progress/progress.md`
+
+## Regras vivas
+
+Se durante a implementação emergir um novo padrão (ex.: formato canônico de resposta paginada), registrar em:
+
+1. `.ai/rules/<categoria>.md` (canônico)
+2. `.cursor/rules/<numero>-<slug>.mdc` (espelho operacional)
+3. `docs/architecture/adr/<numero>-<slug>.md` (decisão registrada)

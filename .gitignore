@@ -1,0 +1,44 @@
+# dependencies
+node_modules
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# build
+dist
+build
+.next
+out
+.turbo
+*.tsbuildinfo
+
+# test
+coverage
+playwright-report
+test-results
+.playwright-mcp
+
+# env
+.env
+.env.*
+!.env.example
+
+# misc
+.DS_Store
+*.log
+*.pid
+.vscode/*
+!.vscode/extensions.json
+.idea
+.cache
+.parcel-cache
+
+# bun
+bun.lockb.backup
+
+# storybook
+storybook-static

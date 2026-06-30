@@ -1,0 +1,35 @@
+{
+  "name": "bomberman-club",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "bun@1.3.9",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "dev:web": "turbo run dev --filter=@bomberman/web",
+    "dev:api": "turbo run dev --filter=@bomberman/api",
+    "build": "turbo run build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "bun --cwd apps/web run test:e2e",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:migrate": "bun --cwd apps/api run db:migrate",
+    "db:generate": "bun --cwd apps/api run db:generate",
+    "db:seed": "bun --cwd apps/api run db:seed",
+    "db:studio": "bun --cwd apps/api run db:studio",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@changesets/cli": "^2.27.11",
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "lefthook": "^1.10.10",
+    "turbo": "^2.5.6",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,29 @@
+---
+description: Estratégia de testes.
+alwaysApply: true
+---
+
+# Testing
+
+## Estratégia
+
+- **Unit** (Vitest) — services, mappers, builders, factories, utils. Cobertura ≥ 90% em regra de negócio.
+- **Integration** — repositories contra DB efêmero (Testcontainers/Postgres) ou mock controlado; controllers contra HTTP em memória do Elysia.
+- **E2E** (Playwright) — fluxos críticos por feature.
+
+## Convenções
+
+- Arquivo `<nome>.test.ts(x)` ao lado do código (ou em `tests/` do módulo backend).
+- AAA: Arrange / Act / Assert.
+- Sem `any`/`unknown` — usar fixtures tipadas (`makeUser({ ... })`, `makeCar({ ... })`).
+- Cada bug corrigido → teste de regressão.
+
+## Storybook
+
+Todo componente reutilizável:
+
+- `Default`
+- `Loading`
+- `Error`
+- `Empty`
+- `Variants` (quando houver)

@@ -1,0 +1,28 @@
+---
+description: Segurança obrigatória em backend e frontend.
+alwaysApply: true
+---
+
+# Security
+
+## Backend
+
+- Helmet equivalente (headers seguros via Elysia plugin).
+- Rate limit por IP em `auth/*` e endpoints sensíveis.
+- JWT access curto (15 min) + refresh rotativo (30 dias) com hash em DB.
+- Password: bcrypt/argon2id com salt; nunca armazenar em claro.
+- Validação Zod em **toda** entrada (body, params, query, headers relevantes).
+- Erros de autenticação não vazam se usuário existe.
+- CORS restrito por origem.
+- Uploads: presigned URL, validação magic-number, mime allowlist, limite de tamanho.
+
+## Frontend
+
+- Tokens em cookie `httpOnly` `secure` `sameSite=lax` (não em localStorage).
+- CSRF tokens para endpoints que mutam (quando aplicável).
+- Sanitização de HTML em conteúdo de usuário.
+- `next/image` (otimização + remotePatterns).
+
+## RBAC
+
+`User.role` enum `USER | ADMIN`. Middleware `requireRole(...)`. Por padrão tudo é `USER`.

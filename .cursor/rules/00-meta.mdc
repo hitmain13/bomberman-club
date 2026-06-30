@@ -1,0 +1,36 @@
+---
+description: Regras meta do projeto Bomberman Club. SEMPRE aplicadas.
+alwaysApply: true
+---
+
+# Bomberman Club — Regras Meta
+
+Este projeto é executado de forma autônoma por uma IA seguindo SDD (Spec Driven Development). A LLM executora atual é `composer-2.5-fast` — as regras precisam ser maximamente explícitas e determinísticas.
+
+## Prioridade de fontes (ordem de leitura quando houver conflito)
+
+1. `IMPLEMENTATION_EXECUTION.md` (na raiz) / `implementation_execution.md`
+2. `execution_strategy.md`
+3. `docs/architecture/ARCHITECTURE.md`
+4. `docs/specs/<feature>/*`
+5. `wireframe.png`
+6. `docs/architecture/adr/*`
+7. `.cursor/rules/*`
+8. Código existente
+
+## Antes de qualquer tarefa
+
+1. Ler `.progress/progress.md`, `.progress/todo.md`, `.progress/known-issues.md`, `.progress/decisions.md`, `.progress/session-log.md`.
+2. Ler a spec da feature em `docs/specs/<feature>/`.
+3. Identificar o wireframe da tela em `wireframe.png` (mobile 375px).
+4. Aplicar o pipeline da feature definido em `implementation_execution.md`.
+
+## Após qualquer alteração relevante
+
+- Atualizar `.progress/progress.md` (concluído/em andamento).
+- Atualizar `.progress/session-log.md`.
+- Se surgiu padrão/convenção novo: registrar em `.ai/rules/*` + ADR em `docs/architecture/adr/`.
+
+## Idioma
+
+Toda comunicação no chat e na documentação humana: **PT-BR**. Identificadores de código, mensagens de commit (Conventional Commits) e logs: **inglês**.
