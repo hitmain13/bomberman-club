@@ -26,7 +26,7 @@ function MyCarsTab(): JSX.Element {
 }
 
 function MyProfileContent(): JSX.Element {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { data: cars } = useMyCars();
 
   if (!user) {
@@ -71,9 +71,15 @@ function MyProfileContent(): JSX.Element {
                 Notificações
               </Button>
             </Link>
-            <Button variant="ghost" onClick={() => void signOut()}>
-              Sair
-            </Button>
+            <Link href="/settings">
+              <Button
+                variant="ghost"
+                leadingIcon={<Icon name="settings" />}
+                aria-label="Configurações"
+              >
+                <span className="sr-only">Configurações</span>
+              </Button>
+            </Link>
           </div>
         }
       />

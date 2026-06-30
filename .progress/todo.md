@@ -1,10 +1,29 @@
-# TODO (próximas tarefas)
+# TODO (próximas tarefas — V1.1)
 
-- M9 Sightings: precisará de Upload real (presigned URL MinIO/S3).
-- M10 Map: Leaflet via `dynamic(import)` para não onerar bundle inicial.
-- M11 Social: definir formato de paginação cursor-based para feeds e comments.
-- Instalar Storybook em M9 (já temos as stories prontas).
-- Integration tests com Testcontainers/Postgres assim que houver ambiente Docker.
-- Implementar avatar upload (M9 Uploads) — placeholder atualmente.
-- Implementar Apple/Google login real (V1.1).
-- Lighthouse target 95+ no QA final (M13).
+## Operacional
+
+- Subir docker compose (Postgres + Redis + MinIO).
+- `bun run db:migrate && bun run db:seed`.
+- Configurar `apps/api/.env` e `apps/web/.env.local` reais.
+- Browser QA manual (testar todos fluxos do wireframe).
+- Lighthouse `>= 95` em performance/a11y/best-practices/SEO.
+
+## Hardening
+
+- Storybook (todas as stories já estão prontas, basta `bun add -D` no `apps/web` e adicionar config).
+- Integration tests via Testcontainers/Postgres real.
+- E2E Playwright para fluxos críticos (login → criar carro → criar flagrado → curtir/comentar).
+- Sentry/Datadog para observabilidade.
+
+## V1.1 (produto)
+
+- Login social Google/Apple real.
+- Presigned URL client-side direct upload.
+- Sharp pipeline (resize, thumbnails, blur placeholder).
+- Push notifications real-time (WebPush/SSE).
+- Comments threading.
+- Full-text search Postgres (tsvector) e/ou OpenSearch.
+- Cluster de markers no mapa.
+- Ranking por likes/popularidade.
+- Dark/Light theme switch.
+- i18n (en-US além de pt-BR).
