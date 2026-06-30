@@ -1,14 +1,62 @@
+"use client";
+
+import { useState } from "react";
+
+import type { FeedScope } from "@bomberman/types";
+
+import { Logo } from "@/components/atoms/Logo";
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
+import { FeedTabs, useFeed } from "@/features/discovery";
+import { CarCard } from "@/features/garage";
+import { SightingCard } from "@/features/sightings";
+import { RequireAuth } from "@/shared/contexts/require-auth";
+
+function Content(): JSX.Element {
+  const [scope, setScope] = useState<FeedScope>("RECENT");
+  const { data, isLoading, error } = useFeed(scope);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <header className="flex items-center justify-between">
+        <Logo size="md" />
+      </header>
+      <FeedTabs value={scope} onChange={setScope} />
+      {isLoading ? (
+        <StatePanel kind="loading" />
+      ) : error ? (
+        <StatePanel kind="error" />
+      ) : !data || data.items.length === 0 ? (
+        <StatePanel
+          kind="empty"
+          title="Feed vazio"
+          description="Siga membros para ver o que está rolando."
+        />
+      ) : (
+        <ul className="flex flex-col gap-4">
+          {data.items.map((entry) =>
+            entry.kind === "CAR" ? (
+              <li key={`car-${entry.item.id}`}>
+                <CarCard car={entry.item} />
+              </li>
+            ) : (
+              <li key={`s-${entry.item.id}`}>
+                <SightingCard sighting={entry.item} />
+              </li>
+            ),
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 export default function FeedPage(): JSX.Element {
   return (
     <AppShell>
-      <StatePanel
-        kind="empty"
-        title="Feed em construção"
-        description="A timeline Para você / Seguindo / Recentes chega na M9."
-      />
+      <RequireAuth>
+        <Content />
+      </RequireAuth>
     </AppShell>
   );
 }

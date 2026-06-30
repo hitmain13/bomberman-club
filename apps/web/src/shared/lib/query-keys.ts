@@ -1,4 +1,4 @@
-import type { SightingPeriod } from "@bomberman/types";
+import type { FeedScope, RankingMetric, SearchType, SightingPeriod } from "@bomberman/types";
 
 export const queryKeys = {
   auth: {
@@ -34,5 +34,10 @@ export const queryKeys = {
       ["social", "comments", targetType, targetId] as const,
     follow: (username: string) => ["social", "follow", username] as const,
     notifications: () => ["social", "notifications"] as const,
+  },
+  discovery: {
+    feed: (scope: FeedScope) => ["discovery", "feed", scope] as const,
+    ranking: (metric: RankingMetric) => ["discovery", "ranking", metric] as const,
+    search: (q: string, type: SearchType) => ["discovery", "search", q, type] as const,
   },
 } as const;

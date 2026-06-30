@@ -2,6 +2,7 @@ import { HttpClient, type HttpClientOptions } from "./http";
 import { AuthResource } from "./resources/auth";
 import { CarsResource } from "./resources/cars";
 import { CatalogResource } from "./resources/catalog";
+import { DiscoveryResource } from "./resources/discovery";
 import { GaragesResource } from "./resources/garages";
 import { SightingsResource } from "./resources/sightings";
 import { SocialResource } from "./resources/social";
@@ -17,6 +18,7 @@ export class BombermanClient {
   public readonly uploads: UploadsResource;
   public readonly sightings: SightingsResource;
   public readonly social: SocialResource;
+  public readonly discovery: DiscoveryResource;
 
   constructor(options: HttpClientOptions) {
     const http = new HttpClient(options);
@@ -28,6 +30,7 @@ export class BombermanClient {
     this.uploads = new UploadsResource(http);
     this.sightings = new SightingsResource(http);
     this.social = new SocialResource(http);
+    this.discovery = new DiscoveryResource(http);
   }
 }
 

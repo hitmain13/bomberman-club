@@ -1,0 +1,6 @@
+openapi: 3.1.0
+info: { title: "012-discovery", version: "1.0.0" }
+paths:
+  /feed: { get: { tags: [discovery] } }
+  /ranking: { get: { tags: [discovery] } }
+  /search: { get: { tags: [discovery] } }
