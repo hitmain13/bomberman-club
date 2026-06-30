@@ -2,7 +2,7 @@ import type { InputHTMLAttributes, ReactNode } from "react";
 
 export interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
-  helperText?: string;
-  errorMessage?: string;
+  helperText?: string | undefined;
+  errorMessage?: string | undefined;
   trailing?: ReactNode;
 }
