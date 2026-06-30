@@ -2,6 +2,7 @@ import { Elysia } from "elysia";
 
 import { authController } from "@/modules/auth";
 import { carsController, userCarsController } from "@/modules/cars";
+import { catalogController } from "@/modules/catalog";
 import { garagesController } from "@/modules/garages";
 import { usersController } from "@/modules/users";
 import { authPlugin } from "@/plugins/auth.plugin";
@@ -24,5 +25,6 @@ export function createApp() {
     .use(usersController)
     .use(garagesController)
     .use(carsController)
-    .use(userCarsController);
+    .use(userCarsController)
+    .use(catalogController);
 }

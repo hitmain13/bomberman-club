@@ -1,0 +1,21 @@
+openapi: 3.1.0
+info: { title: "004-cars + 005-specs-parts", version: "1.0.0" }
+paths:
+  /cars/{id}:
+    get: { tags: [cars] }
+    patch: { tags: [cars] }
+    delete: { tags: [cars] }
+  /cars/{id}/parts:
+    get: { tags: [cars] }
+    post: { tags: [cars] }
+  /cars/{id}/parts/{carPartId}:
+    delete: { tags: [cars] }
+  /cars/{id}/specs:
+    get: { tags: [cars] }
+    put: { tags: [cars] }
+  /catalog/part-categories:
+    get: { tags: [catalog] }
+  /catalog/part-categories/{id}/parts:
+    get: { tags: [catalog] }
+  /catalog/spec-definitions:
+    get: { tags: [catalog] }
