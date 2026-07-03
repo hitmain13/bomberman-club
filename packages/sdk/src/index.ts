@@ -3,6 +3,8 @@ export { HttpClient } from "./http";
 export type { HttpClientOptions } from "./http";
 export { ApiError } from "./errors";
 export type { ApiErrorPayload } from "./errors";
+export { AdminResource } from "./resources/admin";
+export type { AdminUpload, AdminUser } from "./resources/admin";
 export { AuthResource } from "./resources/auth";
 export { UsersResource } from "./resources/users";
 export type { UpdateMeInput } from "./resources/users";

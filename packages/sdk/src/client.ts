@@ -1,4 +1,5 @@
 import { HttpClient, type HttpClientOptions } from "./http";
+import { AdminResource } from "./resources/admin";
 import { AuthResource } from "./resources/auth";
 import { CarsResource } from "./resources/cars";
 import { CatalogResource } from "./resources/catalog";
@@ -10,6 +11,7 @@ import { UploadsResource } from "./resources/uploads";
 import { UsersResource } from "./resources/users";
 
 export class BombermanClient {
+  public readonly admin: AdminResource;
   public readonly auth: AuthResource;
   public readonly users: UsersResource;
   public readonly garages: GaragesResource;
@@ -22,6 +24,7 @@ export class BombermanClient {
 
   constructor(options: HttpClientOptions) {
     const http = new HttpClient(options);
+    this.admin = new AdminResource(http);
     this.auth = new AuthResource(http);
     this.users = new UsersResource(http);
     this.garages = new GaragesResource(http);

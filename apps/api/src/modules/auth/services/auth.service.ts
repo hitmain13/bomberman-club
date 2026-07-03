@@ -26,7 +26,7 @@ async function buildSession(
   if (!user) {
     throw new UnauthorizedError();
   }
-  const access = await issueAccessToken({ sub: user.id, username: user.username });
+  const access = await issueAccessToken({ sub: user.id, username: user.username, role: user.role });
   const refresh = issueRefreshToken();
   await authRepository.createRefreshToken({
     userId: user.id,

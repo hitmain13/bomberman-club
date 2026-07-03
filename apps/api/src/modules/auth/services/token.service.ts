@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
+import type { Role } from "@prisma/client";
 import { SignJWT, jwtVerify } from "jose";
 
 import { UnauthorizedError } from "@/common/errors";
@@ -11,6 +12,7 @@ const accessSecret = new TextEncoder().encode(env.JWT_ACCESS_SECRET);
 export interface AccessTokenPayload {
   sub: string;
   username: string;
+  role: Role;
 }
 
 export interface IssuedAccessToken {
@@ -26,7 +28,7 @@ export interface IssuedRefreshToken {
 
 export async function issueAccessToken(payload: AccessTokenPayload): Promise<IssuedAccessToken> {
   const expiresIn = env.JWT_ACCESS_TTL_SECONDS;
-  const token = await new SignJWT({ username: payload.username })
+  const token = await new SignJWT({ username: payload.username, role: payload.role })
     .setProtectedHeader({ alg: ACCESS_ALG })
     .setSubject(payload.sub)
     .setIssuedAt()
@@ -38,10 +40,14 @@ export async function issueAccessToken(payload: AccessTokenPayload): Promise<Iss
 export async function verifyAccessToken(token: string): Promise<AccessTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, accessSecret, { algorithms: [ACCESS_ALG] });
-    if (typeof payload.sub !== "string" || typeof payload.username !== "string") {
+    if (
+      typeof payload.sub !== "string" ||
+      typeof payload.username !== "string" ||
+      (payload.role !== "USER" && payload.role !== "ADMIN")
+    ) {
       throw new UnauthorizedError("Invalid token payload");
     }
-    return { sub: payload.sub, username: payload.username };
+    return { sub: payload.sub, username: payload.username, role: payload.role as Role };
   } catch {
     throw new UnauthorizedError("Invalid or expired access token");
   }

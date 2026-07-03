@@ -92,3 +92,51 @@ export async function putObject(
     bucketKey,
   };
 }
+
+export async function deleteObject(bucketKey: string): Promise<void> {
+  const endpoint = env.S3_ENDPOINT.replace(/\/$/, "");
+  const host = new URL(endpoint).host;
+  const url = `${endpoint}/${env.S3_BUCKET}/${bucketKey}`;
+  const now = new Date();
+  const { amzDate, dateStamp } = awsDate(now);
+  const payloadHash = sha256Hex("");
+
+  const canonicalHeaders =
+    `host:${host}\n` + `x-amz-content-sha256:${payloadHash}\n` + `x-amz-date:${amzDate}\n`;
+  const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
+
+  const canonicalRequest = [
+    "DELETE",
+    `/${env.S3_BUCKET}/${bucketKey}`,
+    "",
+    canonicalHeaders,
+    signedHeaders,
+    payloadHash,
+  ].join("\n");
+
+  const credentialScope = `${dateStamp}/${env.S3_REGION}/${SERVICE}/aws4_request`;
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    credentialScope,
+    sha256Hex(canonicalRequest),
+  ].join("\n");
+
+  const signature = hmac(signingKey(dateStamp), stringToSign).toString("hex");
+  const authorization = `AWS4-HMAC-SHA256 Credential=${env.S3_ACCESS_KEY_ID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: {
+      host,
+      "x-amz-content-sha256": payloadHash,
+      "x-amz-date": amzDate,
+      authorization,
+    },
+  });
+
+  if (!response.ok && response.status !== 404) {
+    const text = await response.text();
+    throw new Error(`S3 DELETE failed: ${response.status} ${text}`);
+  }
+}

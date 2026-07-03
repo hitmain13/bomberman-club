@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 
+import { adminController } from "@/modules/admin";
 import { authController } from "@/modules/auth";
 import { carsController, userCarsController } from "@/modules/cars";
 import { catalogController } from "@/modules/catalog";
@@ -36,5 +37,6 @@ export function createApp() {
     .use(userSightingsController)
     .use(socialController)
     .use(discoveryController)
-    .use(userProfileExtrasController);
+    .use(userProfileExtrasController)
+    .use(adminController);
 }

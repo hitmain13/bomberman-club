@@ -1,11 +1,13 @@
+import type { Role } from "@prisma/client";
 import { Elysia } from "elysia";
 
-import { UnauthorizedError } from "@/common/errors";
+import { ForbiddenError, UnauthorizedError } from "@/common/errors";
 import { type AccessTokenPayload, verifyAccessToken } from "@/modules/auth/services/token.service";
 
 export interface AuthContextUser {
   id: string;
   username: string;
+  role: Role;
 }
 
 function extractToken(authorization: string | null): string | null {
@@ -28,7 +30,13 @@ export const authPlugin = new Elysia({ name: "auth" }).derive(
       return { currentUser: null };
     }
     const payload: AccessTokenPayload = await verifyAccessToken(token);
-    return { currentUser: { id: payload.sub, username: payload.username } };
+    return {
+      currentUser: {
+        id: payload.sub,
+        username: payload.username,
+        role: payload.role,
+      },
+    };
   },
 );
 
@@ -37,4 +45,11 @@ export function requireAuth(currentUser: AuthContextUser | null): AuthContextUse
     throw new UnauthorizedError();
   }
   return currentUser;
+}
+
+export function requireAdmin(currentUser: AuthContextUser | null): void {
+  const user = requireAuth(currentUser);
+  if (user.role !== "ADMIN") {
+    throw new ForbiddenError("Acesso restrito a administradores.");
+  }
 }
