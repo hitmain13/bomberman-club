@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "cd ../.. && bun install --frozen-lockfile && bun --cwd apps/web run build",
-  "installCommand": "echo 'install handled by build'",
+  "installCommand": "cd ../.. && bun install --frozen-lockfile --ignore-scripts",
+  "buildCommand": "cd ../.. && bun install --frozen-lockfile --ignore-scripts && cd apps/web && bun run build",
   "outputDirectory": ".next",
   "regions": ["gru1"]
 }
