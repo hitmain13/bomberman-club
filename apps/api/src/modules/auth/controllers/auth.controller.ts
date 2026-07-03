@@ -18,14 +18,17 @@ interface CookieJar {
 }
 
 function refreshCookieOptions(expiresAt: Date): Record<string, unknown> {
-  return {
+  const options: Record<string, unknown> = {
     httpOnly: true,
     secure: env.COOKIE_SECURE,
-    sameSite: "lax",
-    domain: env.COOKIE_DOMAIN,
+    sameSite: env.COOKIE_SECURE ? "none" : "lax",
     path: "/auth",
     expires: expiresAt,
   };
+  if (env.COOKIE_DOMAIN) {
+    options.domain = env.COOKIE_DOMAIN;
+  }
+  return options;
 }
 
 function setRefreshCookie(cookie: CookieJar, token: string, expiresAt: Date): void {

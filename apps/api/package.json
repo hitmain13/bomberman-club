@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch src/main.ts",
-    "build": "bun build src/main.ts --target=bun --outdir=dist --minify --external @prisma/client --external argon2",
+    "build": "bun build src/main.ts --target=bun --outdir=dist --minify --external @prisma/client",
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
     "start": "bun run dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
@@ -15,6 +16,7 @@
     "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "db:reset": "prisma migrate reset --schema prisma/schema.prisma --force",
     "db:seed": "bun run prisma/seed.ts",
+    "db:seed:users": "bun run prisma/seed-users.ts",
     "db:studio": "prisma studio --schema prisma/schema.prisma"
   },
   "dependencies": {
@@ -23,8 +25,9 @@
     "@elysiajs/cors": "^1.1.1",
     "@elysiajs/jwt": "^1.1.1",
     "@elysiajs/swagger": "^1.1.6",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "5.22.0",
     "@prisma/client": "^5.22.0",
-    "argon2": "^0.41.1",
     "elysia": "^1.1.27",
     "jose": "^5.9.6",
     "pino": "^9.5.0",

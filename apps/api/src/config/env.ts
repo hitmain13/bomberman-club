@@ -14,7 +14,7 @@ const envSchema = z.object({
   JWT_ACCESS_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
-  COOKIE_DOMAIN: z.string().min(1).default("localhost"),
+  COOKIE_DOMAIN: z.string().optional(),
   COOKIE_SECURE: z
     .union([z.literal("true"), z.literal("false")])
     .transform((value) => value === "true")
@@ -32,6 +32,8 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+let cachedEnv: Env | null = null;
+
 function loadEnv(): Env {
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
@@ -43,4 +45,16 @@ function loadEnv(): Env {
   return parsed.data;
 }
 
-export const env = loadEnv();
+function getEnv(): Env {
+  cachedEnv ??= loadEnv();
+  return cachedEnv;
+}
+
+export const env: Env = new Proxy({} as Env, {
+  get(_target, property: string | symbol) {
+    if (typeof property !== "string") {
+      return undefined;
+    }
+    return getEnv()[property as keyof Env];
+  },
+});

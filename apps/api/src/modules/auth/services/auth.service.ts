@@ -1,5 +1,4 @@
 import type { AuthResponse, LoginInput, RegisterInput } from "@bomberman/types";
-import argon2 from "argon2";
 
 import { ConflictError, UnauthorizedError } from "@/common/errors";
 import { usersRepository } from "@/modules/users/repositories/users.repository";
@@ -61,7 +60,7 @@ export class AuthService {
       throw new ConflictError("E-mail já está em uso.");
     }
 
-    const passwordHash = await argon2.hash(input.password, { type: argon2.argon2id });
+    const passwordHash = await Bun.password.hash(input.password, { algorithm: "argon2id" });
     const user = await authRepository.createUser({ username, email, passwordHash });
     return buildSession(user, context);
   }
@@ -76,7 +75,7 @@ export class AuthService {
       throw new UnauthorizedError("Credenciais inválidas.");
     }
 
-    const ok = await argon2.verify(user.passwordHash, input.password);
+    const ok = await Bun.password.verify(input.password, user.passwordHash);
     if (!ok) {
       throw new UnauthorizedError("Credenciais inválidas.");
     }

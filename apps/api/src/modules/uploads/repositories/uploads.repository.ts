@@ -22,6 +22,12 @@ export class UploadsRepository {
   remove(id: string): Promise<Upload> {
     return prisma.upload.delete({ where: { id } });
   }
+
+  sumStoredBytes(): Promise<number> {
+    return prisma.upload
+      .aggregate({ _sum: { size: true } })
+      .then((result) => result._sum.size ?? 0);
+  }
 }
 
 export const uploadsRepository = new UploadsRepository();

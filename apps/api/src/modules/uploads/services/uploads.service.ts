@@ -10,6 +10,8 @@ import { type SupportedMime, detectMimeFromBytes } from "../utils/magic-number";
 import { putObject } from "../utils/s3";
 
 const MAX_SIZE_BYTES = 15 * 1024 * 1024;
+/** Limite do tier gratuito Cloudflare R2 (10 GB). */
+const STORAGE_QUOTA_BYTES = 10 * 1024 * 1024 * 1024;
 const ALLOWED_MIME: ReadonlyArray<SupportedMime> = ["image/jpeg", "image/png", "image/webp"];
 const EXTENSION_BY_MIME: Record<SupportedMime, string> = {
   "image/jpeg": "jpg",
@@ -43,6 +45,14 @@ export class UploadsService {
     }
     if (file.type && file.type !== detected) {
       throw new ValidationError("Mime declarado divergente do conteúdo.");
+    }
+
+    const storedBytes = await uploadsRepository.sumStoredBytes();
+    if (storedBytes + file.size > STORAGE_QUOTA_BYTES) {
+      const usedGb = (storedBytes / (1024 * 1024 * 1024)).toFixed(2);
+      throw new ValidationError(
+        `Limite de armazenamento atingido (${usedGb} GB de 10 GB no plano gratuito). Remova imagens antigas ou contate o administrador.`,
+      );
     }
 
     const extension = EXTENSION_BY_MIME[detected];
