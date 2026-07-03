@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useCallback, useMemo, useState } from "react";
 
 import type { SearchType } from "@bomberman/types";
 
@@ -36,8 +36,36 @@ const TYPES: ReadonlyArray<{ value: SearchType; label: string }> = [
   { value: "SIGHTINGS", label: "Flagrados" },
 ];
 
+const SEARCH_TYPES = new Set<SearchType>(["ALL", "PEOPLE", "CARS", "SIGHTINGS"]);
+
 const DEFAULT_PEOPLE_FILTERS: PeopleFiltersValue = { city: "", sort: "RECENT", memberSince: "ALL" };
 const DEFAULT_CARS_FILTERS: CarsFiltersValue = { stage: "", sort: "NEWEST" };
+
+function parseSearchType(value: string | null): SearchType {
+  if (value && SEARCH_TYPES.has(value as SearchType)) {
+    return value as SearchType;
+  }
+  return "ALL";
+}
+
+function parsePeopleFilters(searchParams: URLSearchParams): PeopleFiltersValue {
+  const sort = searchParams.get("sort");
+  const memberSince = searchParams.get("memberSince");
+  return {
+    city: searchParams.get("city") ?? "",
+    sort: sort === "FOLLOWERS" || sort === "RECENT" ? sort : "RECENT",
+    memberSince:
+      memberSince === "LAST_30_DAYS" || memberSince === "THIS_YEAR" ? memberSince : "ALL",
+  };
+}
+
+function parseCarsFilters(searchParams: URLSearchParams): CarsFiltersValue {
+  const sort = searchParams.get("sort");
+  return {
+    stage: searchParams.get("stage") ?? "",
+    sort: sort === "NEWEST" || sort === "MOST_POWERFUL" || sort === "LIGHTEST" ? sort : "NEWEST",
+  };
+}
 
 function SearchResults({ query, type }: { query: string; type: SearchType }): JSX.Element {
   const { data, isLoading, error } = useSearch(query, type);
@@ -146,8 +174,13 @@ function BrowseAll({ onSeePeople }: { onSeePeople: () => void }): JSX.Element {
   );
 }
 
-function BrowsePeople(): JSX.Element {
-  const [filters, setFilters] = useState<PeopleFiltersValue>(DEFAULT_PEOPLE_FILTERS);
+function BrowsePeople({
+  filters,
+  onFiltersChange,
+}: {
+  filters: PeopleFiltersValue;
+  onFiltersChange: (filters: PeopleFiltersValue) => void;
+}): JSX.Element {
   const [sheetOpen, setSheetOpen] = useState(false);
   const { data, isLoading, error } = useExplorePeople({
     city: filters.city || undefined,
@@ -164,7 +197,7 @@ function BrowsePeople(): JSX.Element {
             <button
               type="button"
               aria-label="Remover filtro de cidade"
-              onClick={() => setFilters((prev) => ({ ...prev, city: "" }))}
+              onClick={() => onFiltersChange({ ...filters, city: "" })}
               className="ml-1"
             >
               <Icon name="x" size="sm" />
@@ -199,18 +232,24 @@ function BrowsePeople(): JSX.Element {
         open={sheetOpen}
         value={filters}
         onClose={() => setSheetOpen(false)}
-        onApply={setFilters}
-        onClear={() => setFilters(DEFAULT_PEOPLE_FILTERS)}
+        onApply={onFiltersChange}
+        onClear={() => onFiltersChange(DEFAULT_PEOPLE_FILTERS)}
       />
     </div>
   );
 }
 
-function BrowseCars(): JSX.Element {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const ownerFilter = searchParams.get("owner");
-  const [filters, setFilters] = useState<CarsFiltersValue>(DEFAULT_CARS_FILTERS);
+function BrowseCars({
+  filters,
+  onFiltersChange,
+  ownerFilter,
+  onClearOwner,
+}: {
+  filters: CarsFiltersValue;
+  onFiltersChange: (filters: CarsFiltersValue) => void;
+  ownerFilter: string | null;
+  onClearOwner: () => void;
+}): JSX.Element {
   const [sheetOpen, setSheetOpen] = useState(false);
   const { data, isLoading, error } = useExploreCars({
     stage: filters.stage || undefined,
@@ -227,7 +266,7 @@ function BrowseCars(): JSX.Element {
             <button
               type="button"
               aria-label="Remover filtro de membro"
-              onClick={() => router.replace("/explore?type=CARS")}
+              onClick={onClearOwner}
               className="ml-1"
             >
               <Icon name="x" size="sm" />
@@ -264,8 +303,8 @@ function BrowseCars(): JSX.Element {
         open={sheetOpen}
         value={filters}
         onClose={() => setSheetOpen(false)}
-        onApply={setFilters}
-        onClear={() => setFilters(DEFAULT_CARS_FILTERS)}
+        onApply={onFiltersChange}
+        onClear={() => onFiltersChange(DEFAULT_CARS_FILTERS)}
       />
     </div>
   );
@@ -295,8 +334,89 @@ function BrowseSightings(): JSX.Element {
 }
 
 function Content(): JSX.Element {
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState<SearchType>("ALL");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const type = parseSearchType(searchParams.get("type"));
+  const query = searchParams.get("q") ?? "";
+  const ownerFilter = searchParams.get("owner");
+  const peopleFilters = useMemo(() => parsePeopleFilters(searchParams), [searchParams]);
+  const carsFilters = useMemo(() => parseCarsFilters(searchParams), [searchParams]);
+
+  const replaceParams = useCallback(
+    (mutate: (params: URLSearchParams) => void) => {
+      const params = new URLSearchParams(searchParams.toString());
+      mutate(params);
+      const next = params.toString();
+      router.replace(next ? `/explore?${next}` : "/explore");
+    },
+    [router, searchParams],
+  );
+
+  const setType = (nextType: SearchType) => {
+    replaceParams((params) => {
+      params.set("type", nextType);
+      params.delete("q");
+      if (nextType !== "PEOPLE") {
+        params.delete("city");
+        params.delete("memberSince");
+        if (nextType !== "ALL") {
+          params.delete("sort");
+        }
+      }
+      if (nextType !== "CARS") {
+        params.delete("owner");
+        params.delete("stage");
+        if (nextType !== "ALL" && nextType !== "PEOPLE") {
+          params.delete("sort");
+        }
+      }
+      if (nextType === "ALL") {
+        params.delete("sort");
+      }
+    });
+  };
+
+  const setQuery = (value: string) => {
+    replaceParams((params) => {
+      const trimmed = value.trim();
+      if (trimmed) {
+        params.set("q", trimmed);
+      } else {
+        params.delete("q");
+      }
+    });
+  };
+
+  const setPeopleFilters = (filters: PeopleFiltersValue) => {
+    replaceParams((params) => {
+      params.set("type", "PEOPLE");
+      if (filters.city) {
+        params.set("city", filters.city);
+      } else {
+        params.delete("city");
+      }
+      params.set("sort", filters.sort);
+      if (filters.memberSince !== "ALL") {
+        params.set("memberSince", filters.memberSince);
+      } else {
+        params.delete("memberSince");
+      }
+    });
+  };
+
+  const setCarsFilters = (filters: CarsFiltersValue) => {
+    replaceParams((params) => {
+      params.set("type", "CARS");
+      if (filters.stage) {
+        params.set("stage", filters.stage);
+      } else {
+        params.delete("stage");
+      }
+      params.set("sort", filters.sort);
+    });
+  };
+
   const trimmed = query.trim();
 
   return (
@@ -340,9 +460,18 @@ function Content(): JSX.Element {
       ) : type === "ALL" ? (
         <BrowseAll onSeePeople={() => setType("PEOPLE")} />
       ) : type === "PEOPLE" ? (
-        <BrowsePeople />
+        <BrowsePeople filters={peopleFilters} onFiltersChange={setPeopleFilters} />
       ) : type === "CARS" ? (
-        <BrowseCars />
+        <BrowseCars
+          filters={carsFilters}
+          onFiltersChange={setCarsFilters}
+          ownerFilter={ownerFilter}
+          onClearOwner={() =>
+            replaceParams((params) => {
+              params.delete("owner");
+            })
+          }
+        />
       ) : (
         <BrowseSightings />
       )}

@@ -26,18 +26,24 @@ function SpecsContent({ carId }: { carId: string }): JSX.Element {
   const definitions = useSpecDefinitions();
   const set = useSetCarSpec(carId);
 
+  if (definitions.isLoading) {
+    return <StatePanel kind="loading" />;
+  }
+  if (definitions.error) {
+    return <StatePanel kind="error" description="Não foi possível carregar as especificações." />;
+  }
+  if (!definitions.data || definitions.data.length === 0) {
+    return <StatePanel kind="empty" title="Catálogo de especificações indisponível." />;
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      {definitions.data ? (
-        <SetCarSpecForm
-          definitions={definitions.data}
-          onSubmit={(input) => set.mutate(input)}
-          isSubmitting={set.isPending}
-          errorMessage={set.error ? getAuthErrorMessage(set.error) : null}
-        />
-      ) : (
-        <StatePanel kind="loading" />
-      )}
+      <SetCarSpecForm
+        definitions={definitions.data}
+        onSubmit={(input) => set.mutate(input)}
+        isSubmitting={set.isPending}
+        errorMessage={set.error ? getAuthErrorMessage(set.error) : null}
+      />
       {list.isLoading ? (
         <StatePanel kind="loading" />
       ) : list.error ? (

@@ -36,23 +36,29 @@ export function AddCarPartForm({
         <label htmlFor="part-category" className={styles.label}>
           Categoria
         </label>
-        <select
-          id="part-category"
-          className={styles.select}
-          value={categoryId ?? ""}
-          onChange={(event) => {
-            setCategoryId(event.target.value || null);
-            setManufacturer("");
-            setName("");
-          }}
-        >
-          <option value="">Selecione</option>
-          {categories.data?.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+        {categories.isLoading ? (
+          <p className={styles.hint}>Carregando categorias…</p>
+        ) : categories.error ? (
+          <p className={styles.error}>Não foi possível carregar as categorias.</p>
+        ) : (
+          <select
+            id="part-category"
+            className={styles.select}
+            value={categoryId ?? ""}
+            onChange={(event) => {
+              setCategoryId(event.target.value || null);
+              setManufacturer("");
+              setName("");
+            }}
+          >
+            <option value="">Selecione</option>
+            {categories.data?.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className={styles.grid}>

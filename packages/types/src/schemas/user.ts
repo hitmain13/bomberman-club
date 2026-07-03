@@ -6,7 +6,7 @@ export const usernameSchema = z
   .string()
   .min(3)
   .max(24)
-  .regex(/^[a-z0-9_.]+$/, "Use letras minúsculas, números, ponto ou underline.");
+  .regex(/^[a-z0-9_.-]+$/, "Use letras minúsculas, números, ponto, hífen ou underline.");
 
 export const emailSchema = z.string().email().max(120);
 

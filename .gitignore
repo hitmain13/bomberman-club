@@ -42,3 +42,5 @@ bun.lockb.backup
 
 # storybook
 storybook-static
+.vercel
+.env*
