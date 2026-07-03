@@ -18,6 +18,7 @@ export function toCarResponse(car: CarWithCover): CarResponse {
     torqueNm: car.torqueNm,
     currentKm: car.currentKm,
     plate: car.plate,
+    coverUploadId: car.coverUploadId,
     coverUrl: car.cover?.url ?? null,
     createdAt: car.createdAt.toISOString(),
     updatedAt: car.updatedAt.toISOString(),

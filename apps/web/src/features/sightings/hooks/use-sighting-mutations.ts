@@ -4,8 +4,11 @@ import type { SightingInput } from "@bomberman/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
+import { useUploadImage } from "@/shared/hooks/use-upload-image";
 import { apiClient } from "@/shared/lib/api-client";
 import { queryKeys } from "@/shared/lib/query-keys";
+
+export { useUploadImage };
 
 export function useCreateSighting() {
   const queryClient = useQueryClient();
@@ -32,11 +35,5 @@ export function useDeleteSighting(id: string) {
       queryClient.invalidateQueries({ queryKey: ["discovery"] });
       router.replace("/sightings");
     },
-  });
-}
-
-export function useUploadImage() {
-  return useMutation({
-    mutationFn: (file: File) => apiClient.uploads.upload(file, file.name),
   });
 }

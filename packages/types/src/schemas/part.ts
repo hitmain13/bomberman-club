@@ -17,11 +17,21 @@ export const partSchema = z.object({
   name: z.string().min(1).max(80),
 });
 
-export const carPartInputSchema = z.object({
-  partId: z.string(),
-  installedAt: z.string().datetime().nullable().optional(),
-  description: z.string().max(280).nullable().optional(),
-});
+export const carPartInputSchema = z
+  .object({
+    partId: z.string().optional(),
+    categoryId: z.string().optional(),
+    manufacturer: z.string().trim().min(1).max(60).optional(),
+    name: z.string().trim().min(1).max(80).optional(),
+    installedAt: z.string().datetime().nullable().optional(),
+    description: z.string().max(280).nullable().optional(),
+  })
+  .refine(
+    (data) => Boolean(data.partId) || Boolean(data.categoryId && data.manufacturer && data.name),
+    {
+      message: "Selecione uma peça existente ou informe fabricante e nome para cadastrar uma nova.",
+    },
+  );
 
 export const carPartResponseSchema = z.object({
   id: z.string(),

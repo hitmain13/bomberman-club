@@ -19,6 +19,7 @@ export function SightingCard({ sighting, href, className }: SightingCardProps): 
           alt={sighting.title}
           fill
           sizes="(max-width: 768px) 100vw, 480px"
+          className="object-cover"
         />
       </div>
       <div className={styles.body}>

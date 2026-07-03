@@ -11,8 +11,10 @@ function withClient(node: ReactNode): JSX.Element {
 }
 
 describe("AddCarPartForm", () => {
-  it("disables submit until a part is selected", () => {
+  it("disables submit until category, manufacturer and name are filled", () => {
     render(withClient(<AddCarPartForm onSubmit={vi.fn()} />));
     expect(screen.getByRole("button", { name: "Adicionar peça" })).toBeDisabled();
+    expect(screen.getByLabelText("Fabricante")).toBeDisabled();
+    expect(screen.getByLabelText("Peça")).toBeDisabled();
   });
 });

@@ -22,16 +22,32 @@ import { RequireAuth } from "@/shared/contexts/require-auth";
 
 function MyCarsTab(): JSX.Element {
   const { data, isLoading, error } = useMyCars();
+
   if (isLoading) {
     return <StatePanel kind="loading" />;
   }
   if (error || !data) {
     return <StatePanel kind="error" />;
   }
-  if (data.length === 0) {
-    return <StatePanel kind="empty" title="Você ainda não cadastrou carros." />;
-  }
-  return <CarList cars={data} />;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Link href="/me/cars/new">
+        <Button variant="secondary" fullWidth leadingIcon={<Icon name="plus" />}>
+          Adicionar carro
+        </Button>
+      </Link>
+      {data.length === 0 ? (
+        <StatePanel
+          kind="empty"
+          title="Você ainda não cadastrou carros."
+          description="Adicione seu primeiro carro para mostrar seu setup."
+        />
+      ) : (
+        <CarList cars={data} />
+      )}
+    </div>
+  );
 }
 
 function MySightingsTab({ username }: { username: string }): JSX.Element {

@@ -1,10 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/atoms/Button";
+import { Icon } from "@/components/atoms/Icon";
+import { Spinner } from "@/components/atoms/Spinner";
 import { FormField } from "@/components/molecules/FormField";
+import { useUploadImage } from "@/shared/hooks/use-upload-image";
 
 import { type CarFormValues, carFormSchema } from "../../schemas";
 
@@ -28,8 +33,12 @@ export function CarForm({
   isSubmitting = false,
   errorMessage = null,
 }: CarFormProps): JSX.Element {
+  const upload = useUploadImage();
+  const [preview, setPreview] = useState<string | null>(initialCar?.coverUrl ?? null);
   const {
     register,
+    setValue,
+    watch,
     handleSubmit,
     formState: { errors },
   } = useForm<CarFormValues>({
@@ -49,6 +58,7 @@ export function CarForm({
           torqueNm: initialCar.torqueNm,
           currentKm: initialCar.currentKm,
           plate: initialCar.plate ?? null,
+          coverUploadId: initialCar.coverUploadId ?? null,
         }
       : {
           garageId,
@@ -64,13 +74,51 @@ export function CarForm({
           torqueNm: 0,
           currentKm: 0,
           plate: null,
+          coverUploadId: null,
         },
   });
+
+  const coverUploadId = watch("coverUploadId");
+
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    setPreview(URL.createObjectURL(file));
+    const result = await upload.mutateAsync(file);
+    setValue("coverUploadId", result.id, { shouldDirty: true });
+  };
 
   return (
     <form noValidate className={styles.root} onSubmit={handleSubmit(onSubmit)}>
       <input type="hidden" {...register("garageId")} />
       {errorMessage ? <p className={styles.error}>{errorMessage}</p> : null}
+
+      <section className={styles.section}>
+        <p className={styles.sectionTitle}>Foto</p>
+        <div className={styles.photoBox}>
+          {preview ? (
+            <Image src={preview} alt="Pré-visualização do carro" fill className="object-cover" />
+          ) : upload.isPending ? (
+            <Spinner size="md" />
+          ) : (
+            <div className="flex flex-col items-center gap-2">
+              <Icon name="camera" size="lg" />
+              <span>Toque para escolher uma foto</span>
+            </div>
+          )}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className={styles.photoInput}
+            onChange={(event) => {
+              void handlePhotoChange(event);
+            }}
+          />
+        </div>
+        {coverUploadId ? <p className={styles.hint}>Foto pronta.</p> : null}
+      </section>
 
       <section className={styles.section}>
         <p className={styles.sectionTitle}>Identidade</p>

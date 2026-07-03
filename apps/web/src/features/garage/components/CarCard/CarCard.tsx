@@ -30,6 +30,7 @@ export function CarCard({ car, owner, href, className }: CarCardProps): JSX.Elem
               alt={car.nickname}
               fill
               sizes="(max-width: 768px) 100vw, 480px"
+              className="object-cover"
             />
           ) : (
             <span className={styles.coverPlaceholder}>

@@ -11,7 +11,13 @@ export function CarDetailHeader({ car, stageBadge }: CarDetailHeaderProps): JSX.
     <section className={styles.root}>
       <div className={styles.cover}>
         {car.coverUrl ? (
-          <Image src={car.coverUrl} alt={car.nickname} fill sizes="100vw" />
+          <Image
+            src={car.coverUrl}
+            alt={car.nickname}
+            fill
+            sizes="100vw"
+            className="object-cover"
+          />
         ) : (
           <span className={styles.placeholder}>
             <Icon name="camera" size="lg" aria-label="Sem foto" />

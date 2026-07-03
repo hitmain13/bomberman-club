@@ -1,6 +1,7 @@
 import type { CarPartInput, CarPartResponse } from "@bomberman/types";
+import type { Part } from "@prisma/client";
 
-import { ForbiddenError, NotFoundError } from "@/common/errors";
+import { ForbiddenError, NotFoundError, ValidationError } from "@/common/errors";
 import { catalogRepository } from "@/modules/catalog";
 
 import { toCarPartResponse } from "../mappers/car-parts.mapper";
@@ -12,6 +13,30 @@ async function ensureCarOwnership(carId: string, userId: string): Promise<void> 
   if (!car) {
     throw new ForbiddenError("Você não pode modificar este carro.");
   }
+}
+
+async function resolvePart(input: CarPartInput): Promise<Part> {
+  if (input.partId) {
+    const part = await catalogRepository.findPartById(input.partId);
+    if (!part) {
+      throw new NotFoundError("Part", input.partId);
+    }
+    return part;
+  }
+  if (!input.categoryId || !input.manufacturer || !input.name) {
+    throw new ValidationError(
+      "Selecione uma peça existente ou informe fabricante e nome para cadastrar uma nova.",
+    );
+  }
+  const category = await catalogRepository.findPartCategoryById(input.categoryId);
+  if (!category) {
+    throw new NotFoundError("PartCategory", input.categoryId);
+  }
+  return catalogRepository.findOrCreatePart({
+    categoryId: category.id,
+    manufacturer: input.manufacturer,
+    name: input.name,
+  });
 }
 
 export class CarPartsService {
@@ -26,10 +51,7 @@ export class CarPartsService {
 
   async add(carId: string, userId: string, input: CarPartInput): Promise<CarPartResponse> {
     await ensureCarOwnership(carId, userId);
-    const part = await catalogRepository.findPartById(input.partId);
-    if (!part) {
-      throw new NotFoundError("Part", input.partId);
-    }
+    const part = await resolvePart(input);
     const created = await carPartsRepository.add({
       carId,
       partId: part.id,

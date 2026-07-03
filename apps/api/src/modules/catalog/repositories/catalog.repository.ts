@@ -26,6 +26,30 @@ export class CatalogRepository {
     return prisma.part.findUnique({ where: { id } });
   }
 
+  async findOrCreatePart(input: {
+    categoryId: string;
+    manufacturer: string;
+    name: string;
+  }): Promise<Part> {
+    const existing = await prisma.part.findFirst({
+      where: {
+        categoryId: input.categoryId,
+        manufacturer: { equals: input.manufacturer, mode: "insensitive" },
+        name: { equals: input.name, mode: "insensitive" },
+      },
+    });
+    if (existing) {
+      return existing;
+    }
+    return prisma.part.create({
+      data: {
+        categoryId: input.categoryId,
+        manufacturer: input.manufacturer,
+        name: input.name,
+      },
+    });
+  }
+
   findSpecDefinitionById(id: string): Promise<SpecificationDefinition | null> {
     return prisma.specificationDefinition.findUnique({ where: { id } });
   }

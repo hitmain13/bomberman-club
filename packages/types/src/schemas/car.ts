@@ -25,6 +25,7 @@ export const carInputSchema = z.object({
     .regex(/^[A-Z0-9-]+$/i)
     .nullable()
     .optional(),
+  coverUploadId: z.string().nullable().optional(),
 });
 
 export const carResponseSchema = carInputSchema.extend({

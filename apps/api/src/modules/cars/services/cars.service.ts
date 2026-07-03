@@ -52,6 +52,7 @@ export class CarsService {
       .withPower(input.horsepowerHp, input.torqueNm)
       .withKm(input.currentKm)
       .withPlate(input.plate ?? null)
+      .withCover(input.coverUploadId ?? null)
       .build();
     const created = await carsRepository.create(data);
     return toCarResponse(created);
@@ -76,6 +77,7 @@ export class CarsService {
       torqueNm: input.torqueNm,
       currentKm: input.currentKm,
       plate: input.plate ?? null,
+      coverUploadId: input.coverUploadId ?? null,
     });
     return toCarResponse(updated);
   }
