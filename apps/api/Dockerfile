@@ -35,4 +35,4 @@ EXPOSE 3333
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1:3333/health || exit 1
 
-CMD ["sh", "-c", "bun run db:migrate && bun run dist/main.js"]
+CMD ["sh", "-c", "bun x prisma@5.22.0 migrate deploy --schema prisma/schema.prisma && bun run dist/main.js"]
