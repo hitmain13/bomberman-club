@@ -1,6 +1,6 @@
 # Progress
 
-## Concluído (M0–M13)
+## Concluído (M0–M13 + Feature 013)
 
 - **M0** Governança: regras (.cursor/rules, .ai/rules), skills, docs SDD, 7 ADRs.
 - **M1** Infra: Bun + Turborepo + Biome + docker-compose + lefthook + commitlint + CI Actions.
@@ -16,36 +16,38 @@
 - **M11** Feature 010-social: comments/likes/favorites/follows/notifications polimórficos + LikeButton/CommentsThread/FollowButton/NotificationsList + /notifications.
 - **M12** Feature 012-discovery: feed scoped (FORYOU/FOLLOWING/RECENT), ranking (4 métricas), search/explore (people/cars/sightings) + páginas /feed, /ranking, /explore.
 - **M13** Settings (tela 20) + QA final.
+- **Feature 013** Explore Social: navegação social completa (Pessoas/Carros/Flagrados) no Explorar, perfil público enriquecido (estatísticas reais + abas Sobre/Carros/Flagrados/Curtidas). Ver `docs/specs/013-explore-social/` e ADR 0008.
 
 ## Métricas finais
 
 - **TypeScript strict total**: zero `any`/`unknown`/`as`. `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`.
-- **Biome**: 475 arquivos sem warnings.
-- **Testes**: 55 unitários (46 web + 9 api).
-- **Build**: 25 rotas (17 estáticas + 8 dinâmicas), First Load JS shared 106 kB.
-- **Commits**: 14 (Conventional Commits) autoria Fabio Matsumoto.
-- **Specs SDD**: 11 (001-auth, 002-profile, 003-garage, 004-cars, 006-uploads, 007-sightings, 008-map, 010-social, 012-discovery).
-- **Bounded contexts implementados**: Identity & Access, Garage, Configurability (EAV), Sightings, Media (Uploads), Social, Discovery.
-- **Telas do wireframe**: 21/21 implementadas pixel-perfect.
+- **Biome**: 540 arquivos sem warnings.
+- **Testes**: 75 unitários (63 web + 12 api).
+- **Build**: 26 rotas (18 estáticas + 8 dinâmicas), First Load JS shared 106 kB.
+- **Commits**: 14 (Conventional Commits) autoria Fabio Matsumoto) + 1 pendente desta feature.
+- **Specs SDD**: 12 (001-auth, 002-profile, 003-garage, 004-cars, 006-uploads, 007-sightings, 008-map, 010-social, 012-discovery, 013-explore-social).
+- **Bounded contexts implementados**: Identity & Access, Garage, Configurability (EAV), Sightings, Media (Uploads), Social, Discovery (agora também read-model layer cross-context — ADR 0008).
+- **Telas do wireframe**: 21/21 (wireframe original) + 10/10 (wireframe suplementar Pessoas & Carros) implementadas pixel-perfect.
+- **Dívida técnica de layering zerada**: nenhum service no backend acessa Prisma fora de um Repository (auditoria completa via grep).
 
 ## Tabelas finais
 
-User, RefreshToken, PasswordReset, Garage, Car, CarImage, Upload, SpecificationDefinition, CarSpecificationValue, PartCategory, Part, CarPart, Sighting, Follow, Comment (polimórfico), Like (polimórfico), Favorite (polimórfico), Notification.
+User, RefreshToken, PasswordReset, Garage, Car, CarImage, Upload, SpecificationDefinition, CarSpecificationValue, PartCategory, Part, CarPart, Sighting, Follow, Comment (polimórfico), Like (polimórfico), Favorite (polimórfico), Notification. Nenhuma tabela nova na feature 013 (100% agregação sobre o schema existente).
 
 ## APIs
 
 - `/auth/*` (register, login, refresh, logout)
-- `/users/*` (me, byUsername, patch me)
+- `/users/*` (me, byUsername, patch me, **stats**, **likes**)
 - `/garages/mine`
 - `/cars/*` (mine, get, create, patch, delete, parts CRUD, specs upsert)
-- `/users/:username/cars`
+- `/users/:username/cars`, `/users/:username/sightings`
 - `/catalog/*` (part categories, parts by category, spec definitions)
 - `/uploads/*` (multipart upload, get, delete owner)
 - `/sightings/*` (list paginated com period, get, create, delete owner)
 - `/likes/:type/:id/toggle`, `/favorites/:type/:id/toggle`
 - `/comments/*`, `/follows/:username/toggle`
 - `/notifications`, `/notifications/:id/read`
-- `/feed`, `/ranking`, `/search`
+- `/feed`, `/ranking`, `/search`, **`/explore/people`**, **`/explore/cars`**
 - `/health`
 - `/docs` (Swagger em dev)
 
@@ -54,9 +56,11 @@ User, RefreshToken, PasswordReset, Garage, Car, CarImage, Upload, SpecificationD
 - Storybook ainda não instalado (stories prontas em todas pastas).
 - Lighthouse target ≥ 95 (a executar após deploy real).
 - Integration tests com Testcontainers/Postgres.
+- Browser QA ao vivo da feature 013 (ambiente sem Docker nesta sessão — ver known-issues.md).
 - Login social Google/Apple real.
 - Presigned URL client-side direct upload (atualmente server-side via multipart).
 - Image processing pipeline (sharp resize/thumbnails).
 - Push notifications real-time.
 - Full-text search Postgres (atualmente substring `ilike`).
 - Cluster de markers no mapa.
+- Banner de perfil e "último acesso" (avaliados e adiados — ver ADR 0008).

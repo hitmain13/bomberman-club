@@ -13,7 +13,8 @@ export type IconName =
   | "camera"
   | "chevron-right"
   | "arrow-left"
-  | "x";
+  | "x"
+  | "filter";
 
 export type IconSize = "sm" | "md" | "lg";
 

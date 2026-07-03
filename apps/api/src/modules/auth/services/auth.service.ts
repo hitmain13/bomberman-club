@@ -2,7 +2,7 @@ import type { AuthResponse, LoginInput, RegisterInput } from "@bomberman/types";
 import argon2 from "argon2";
 
 import { ConflictError, UnauthorizedError } from "@/common/errors";
-import { prisma } from "@/database/prisma";
+import { usersRepository } from "@/modules/users/repositories/users.repository";
 
 import { toPrivateUser } from "../mappers/auth.mapper";
 import { authRepository } from "../repositories/auth.repository";
@@ -17,14 +17,6 @@ interface IssuedSession {
   response: AuthResponse;
   refreshToken: string;
   refreshTokenExpiresAt: Date;
-}
-
-async function loadAvatarUrl(uploadId: string | null): Promise<string | null> {
-  if (!uploadId) {
-    return null;
-  }
-  const upload = await prisma.upload.findUnique({ where: { id: uploadId } });
-  return upload?.url ?? null;
 }
 
 async function buildSession(
@@ -43,7 +35,7 @@ async function buildSession(
     userAgent: context.userAgent,
     ip: context.ip,
   });
-  const avatarUrl = await loadAvatarUrl(user.avatarUploadId);
+  const avatarUrl = await usersRepository.findAvatarUrl(user.avatarUploadId);
   return {
     response: {
       user: toPrivateUser(user, avatarUrl),

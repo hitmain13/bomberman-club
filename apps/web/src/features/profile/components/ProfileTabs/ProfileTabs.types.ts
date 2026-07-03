@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-export type ProfileTabId = "cars" | "sightings" | "gallery";
+export type ProfileTabId = "about" | "cars" | "sightings" | "gallery" | "likes";
 
 export interface ProfileTab {
   id: ProfileTabId;

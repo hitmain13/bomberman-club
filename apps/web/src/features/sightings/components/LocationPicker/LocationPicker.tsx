@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/atoms/Button";
 import { Icon } from "@/components/atoms/Icon";
+import { BottomSheet } from "@/components/organisms/BottomSheet";
 
 import { styles } from "./LocationPicker.styles";
 import type { LocationPickerProps } from "./LocationPicker.types";
@@ -113,10 +114,6 @@ export function LocationPicker({
     };
   }, [open, selected]);
 
-  if (!open) {
-    return null;
-  }
-
   const handleUseMyLocation = (): void => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       return;
@@ -134,32 +131,12 @@ export function LocationPicker({
   };
 
   return (
-    <>
-      <div
-        className={styles.overlay}
-        onClick={onCancel}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            onCancel();
-          }
-        }}
-        role="presentation"
-      />
-      <dialog open className={styles.sheet} aria-modal="true" aria-label="Escolher local">
-        <header className={styles.header}>
-          <h2 className={styles.title}>Escolher local</h2>
-          <button type="button" className={styles.close} onClick={onCancel}>
-            Cancelar
-          </button>
-        </header>
-        <div ref={containerRef} className={styles.mapWrap} />
-        <div className={styles.hint}>
-          <span>Toque ou arraste o pin</span>
-          <span className={styles.hintCoord}>
-            {formatCoord(selected?.lat ?? null)}, {formatCoord(selected?.lng ?? null)}
-          </span>
-        </div>
-        <div className={styles.actions}>
+    <BottomSheet
+      open={open}
+      title="Escolher local"
+      onClose={onCancel}
+      footer={
+        <>
           <Button
             variant="secondary"
             fullWidth
@@ -179,8 +156,16 @@ export function LocationPicker({
           >
             Confirmar
           </Button>
-        </div>
-      </dialog>
-    </>
+        </>
+      }
+    >
+      <div ref={containerRef} className={styles.mapWrap} />
+      <div className={styles.hint}>
+        <span>Toque ou arraste o pin</span>
+        <span className={styles.hintCoord}>
+          {formatCoord(selected?.lat ?? null)}, {formatCoord(selected?.lng ?? null)}
+        </span>
+      </div>
+    </BottomSheet>
   );
 }

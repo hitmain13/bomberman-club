@@ -39,3 +39,22 @@ src/modules/<modulo>/
 - **Factory**: para criar peças por categoria (`PartFactory.createTurbo(...)`).
 - **Repository**: abstrai persistência. Métodos por intenção (`findByOwner`, não `find`).
 - **Mapper**: `toEntity`, `toDTO`, `toResponse`.
+
+## Grafo de dependências entre módulos (ADR 0008)
+
+Cross-module reuse é permitido (ex.: `social` chamando `usersRepository`), mas **só em uma direção**:
+
+```mermaid
+flowchart TD
+  auth --> users
+  social --> users
+  cars --> catalog
+  discovery --> cars
+  discovery --> sightings
+  discovery --> social
+  discovery --> users
+```
+
+- Módulos de domínio (`users`, `cars`, `social`, `sightings`, `garages`, `catalog`) **nunca** importam de `discovery`.
+- `discovery` é a única camada permitida a agregar repositórios de múltiplos módulos (é o read-model/aggregation layer da aplicação — mais próximo de CQRS read-side do que um bounded context próprio). Qualquer service que precise combinar dados de 2+ módulos de domínio (ex.: estatísticas de perfil, itens curtidos por um usuário) mora em `discovery`, mesmo que sua rota HTTP fique sob o prefixo de outro módulo (ex.: `/users/:username/stats` registrado por um controller do módulo `discovery`, seguindo o mesmo padrão de `userCarsController`/`userSightingsController`).
+- Antes de importar um repository de outro módulo, verifique este grafo para não introduzir um ciclo. Se a única forma de resolver um caso de uso criar um ciclo, o service pertence a `discovery`, não ao módulo de origem.

@@ -11,3 +11,4 @@ Decisões arquiteturais detalhadas vivem em `docs/architecture/adr/`. Este arqui
 | 0005 | Bootstrap do `apps/web` via boilerplate Next 15                  |
 | 0006 | LLM executora: composer-2.5-fast — regras maximamente explícitas |
 | 0007 | Validação Zod + `z.infer` em todo boundary; proibido `as`/`any`  |
+| 0008 | Explore Social: `discovery` como camada de leitura cross-context; correção de 3 violações de Prisma-fora-de-Repository; banner/último-acesso adiados (fora dos wireframes pixel) |

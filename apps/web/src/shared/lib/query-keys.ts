@@ -1,4 +1,11 @@
-import type { FeedScope, RankingMetric, SearchType, SightingPeriod } from "@bomberman/types";
+import type {
+  CarsSort,
+  FeedScope,
+  PeopleSort,
+  RankingMetric,
+  SearchType,
+  SightingPeriod,
+} from "@bomberman/types";
 
 export const queryKeys = {
   auth: {
@@ -6,6 +13,8 @@ export const queryKeys = {
   },
   users: {
     byUsername: (username: string) => ["users", "byUsername", username] as const,
+    stats: (username: string) => ["users", "stats", username] as const,
+    likes: (username: string) => ["users", "likes", username] as const,
   },
   garages: {
     mine: () => ["garages", "mine"] as const,
@@ -40,5 +49,17 @@ export const queryKeys = {
     feed: (scope: FeedScope) => ["discovery", "feed", scope] as const,
     ranking: (metric: RankingMetric) => ["discovery", "ranking", metric] as const,
     search: (q: string, type: SearchType) => ["discovery", "search", q, type] as const,
+    explorePeople: (filters: {
+      q: string;
+      city: string;
+      since: string;
+      sort: PeopleSort;
+    }) => ["discovery", "explore-people", filters] as const,
+    exploreCars: (filters: {
+      q: string;
+      stage: string;
+      owner: string;
+      sort: CarsSort;
+    }) => ["discovery", "explore-cars", filters] as const,
   },
 } as const;

@@ -1,0 +1,37 @@
+openapi: 3.1.0
+info: { title: "013-explore-social", version: "1.0.0" }
+paths:
+  /explore/people:
+    get:
+      tags: [discovery]
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: city, in: query, schema: { type: string } }
+        - { name: since, in: query, schema: { type: string, format: date-time } }
+        - { name: sort, in: query, schema: { type: string, enum: [RECENT, FOLLOWERS] } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: ok }
+  /explore/cars:
+    get:
+      tags: [discovery]
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: stage, in: query, schema: { type: string } }
+        - { name: owner, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [NEWEST, MOST_POWERFUL, LIGHTEST] } }
+        - { name: cursor, in: query, schema: { type: string } }
+        - { name: limit, in: query, schema: { type: integer } }
+      responses:
+        "200": { description: ok }
+  /users/{username}/stats:
+    get:
+      tags: [users]
+      responses:
+        "200": { description: ok }
+  /users/{username}/likes:
+    get:
+      tags: [users]
+      responses:
+        "200": { description: ok }

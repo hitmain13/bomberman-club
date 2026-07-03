@@ -49,6 +49,14 @@ const paths: Record<IconName, JSX.Element> = {
   "chevron-right": <path d="m9 6 6 6-6 6" />,
   "arrow-left": <path d="M19 12H5M12 19l-7-7 7-7" />,
   x: <path d="M6 6l12 12M18 6 6 18" />,
+  filter: (
+    <g>
+      <path d="M4 6h16M7 12h10M10 18h4" />
+      <circle cx="9" cy="6" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="15" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="18" r="1.6" fill="currentColor" stroke="none" />
+    </g>
+  ),
 };
 
 export function Icon({ name, size = "md", className, ...rest }: IconProps): JSX.Element {

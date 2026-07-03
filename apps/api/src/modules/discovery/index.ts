@@ -1,4 +1,10 @@
 export { discoveryController } from "./controllers/discovery.controller";
+export { userProfileExtrasController } from "./controllers/profile.controller";
 export { feedService } from "./services/feed.service";
 export { rankingService } from "./services/ranking.service";
 export { searchService } from "./services/search.service";
+export { explorePeopleService } from "./services/explore-people.service";
+export { exploreCarsService } from "./services/explore-cars.service";
+export { profileStatsService } from "./services/profile-stats.service";
+export { likedItemsService } from "./services/liked-items.service";
+export { discoveryRepository } from "./repositories/discovery.repository";

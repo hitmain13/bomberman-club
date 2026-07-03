@@ -1,16 +1,13 @@
 import type { FollowResponse } from "@bomberman/types";
 
 import { ConflictError, NotFoundError } from "@/common/errors";
-import { prisma } from "@/database/prisma";
+import { usersRepository } from "@/modules/users/repositories/users.repository";
 
 import { followsRepository } from "../repositories/follows.repository";
 import { notificationsRepository } from "../repositories/notifications.repository";
 
 async function findUserIdByUsername(username: string): Promise<string> {
-  const user = await prisma.user.findUnique({
-    where: { username: username.toLowerCase() },
-    select: { id: true },
-  });
+  const user = await usersRepository.findByUsername(username);
   if (!user) {
     throw new NotFoundError("User", username);
   }

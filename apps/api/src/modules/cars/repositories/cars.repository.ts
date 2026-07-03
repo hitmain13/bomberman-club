@@ -23,6 +23,25 @@ export class CarsRepository {
     });
   }
 
+  listIdsByOwnerUsername(username: string): Promise<string[]> {
+    return prisma.car
+      .findMany({ where: { garage: { user: { username } } }, select: { id: true } })
+      .then((rows) => rows.map((row) => row.id));
+  }
+
+  findManyByIds(ids: string[]): Promise<CarWithCover[]> {
+    if (ids.length === 0) {
+      return Promise.resolve([]);
+    }
+    return prisma.car.findMany({ where: { id: { in: ids } }, include: includeCover });
+  }
+
+  findOwnerId(carId: string): Promise<string | null> {
+    return prisma.car
+      .findUnique({ where: { id: carId }, select: { garage: { select: { userId: true } } } })
+      .then((row) => row?.garage.userId ?? null);
+  }
+
   findById(id: string): Promise<CarWithCover | null> {
     return prisma.car.findUnique({ where: { id }, include: includeCover });
   }

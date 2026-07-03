@@ -20,6 +20,10 @@ export class FollowsRepository {
   countFollowers(userId: string): Promise<number> {
     return prisma.follow.count({ where: { followingId: userId } });
   }
+
+  countFollowing(userId: string): Promise<number> {
+    return prisma.follow.count({ where: { followerId: userId } });
+  }
 }
 
 export const followsRepository = new FollowsRepository();

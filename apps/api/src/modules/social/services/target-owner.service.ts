@@ -1,35 +1,31 @@
 import type { TargetType } from "@prisma/client";
 
 import { NotFoundError } from "@/common/errors";
-import { prisma } from "@/database/prisma";
+import { carsRepository } from "@/modules/cars/repositories/cars.repository";
+import { sightingsRepository } from "@/modules/sightings/repositories/sightings.repository";
+import { usersRepository } from "@/modules/users/repositories/users.repository";
 
 export async function resolveTargetOwnerId(
   targetType: TargetType,
   targetId: string,
 ): Promise<string> {
   if (targetType === "PROFILE") {
-    const user = await prisma.user.findUnique({ where: { id: targetId }, select: { id: true } });
+    const user = await usersRepository.findById(targetId);
     if (!user) {
       throw new NotFoundError("Profile", targetId);
     }
     return user.id;
   }
   if (targetType === "CAR") {
-    const car = await prisma.car.findUnique({
-      where: { id: targetId },
-      select: { garage: { select: { userId: true } } },
-    });
-    if (!car) {
+    const ownerId = await carsRepository.findOwnerId(targetId);
+    if (!ownerId) {
       throw new NotFoundError("Car", targetId);
     }
-    return car.garage.userId;
+    return ownerId;
   }
-  const sighting = await prisma.sighting.findUnique({
-    where: { id: targetId },
-    select: { userId: true },
-  });
-  if (!sighting) {
+  const ownerId = await sightingsRepository.findOwnerId(targetId);
+  if (!ownerId) {
     throw new NotFoundError("Sighting", targetId);
   }
-  return sighting.userId;
+  return ownerId;
 }

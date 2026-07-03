@@ -7,7 +7,15 @@ import { Icon } from "@/components/atoms/Icon";
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { CarList, useMyCars } from "@/features/garage";
-import { ProfileHeader, ProfileStats, type ProfileTab, ProfileTabs } from "@/features/profile";
+import {
+  ProfileAboutTab,
+  ProfileHeader,
+  ProfileLikesTab,
+  ProfileStats,
+  type ProfileTab,
+  ProfileTabs,
+  useProfileStats,
+} from "@/features/profile";
 import { SightingCard, useUserSightings } from "@/features/sightings";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
@@ -50,16 +58,26 @@ function MySightingsTab({ username }: { username: string }): JSX.Element {
 
 function MyProfileContent(): JSX.Element {
   const { user } = useAuth();
-  const { data: cars } = useMyCars();
-  const { data: sightings } = useUserSightings(user?.username ?? "");
+  const { data: stats } = useProfileStats(user?.username ?? "");
 
   if (!user) {
     return <StatePanel kind="loading" />;
   }
 
-  const carsCount = cars?.length ?? 0;
-  const sightingsCount = sightings?.length ?? 0;
   const tabs: ReadonlyArray<ProfileTab> = [
+    {
+      id: "about",
+      label: "Sobre",
+      content: (
+        <ProfileAboutTab
+          bio={user.bio}
+          city={user.city}
+          memberSince={user.createdAt}
+          carsCount={stats?.carsCount ?? 0}
+          sightingsCount={stats?.sightingsCount ?? 0}
+        />
+      ),
+    },
     { id: "cars", label: "Carros", content: <MyCarsTab /> },
     {
       id: "sightings",
@@ -67,9 +85,9 @@ function MyProfileContent(): JSX.Element {
       content: <MySightingsTab username={user.username} />,
     },
     {
-      id: "gallery",
-      label: "Galeria",
-      content: <StatePanel kind="empty" title="Sem fotos ainda." />,
+      id: "likes",
+      label: "Curtidas",
+      content: <ProfileLikesTab username={user.username} />,
     },
   ];
   return (
@@ -110,9 +128,10 @@ function MyProfileContent(): JSX.Element {
       />
       <ProfileStats
         items={[
-          { label: "Carros", value: carsCount },
-          { label: "Flagrados", value: sightingsCount },
-          { label: "Seguidores", value: 0 },
+          { label: "Carros", value: stats?.carsCount ?? 0 },
+          { label: "Flagrados", value: stats?.sightingsCount ?? 0 },
+          { label: "Seguidores", value: stats?.followersCount ?? 0 },
+          { label: "Seguindo", value: stats?.followingCount ?? 0 },
         ]}
       />
       <ProfileTabs tabs={tabs} />

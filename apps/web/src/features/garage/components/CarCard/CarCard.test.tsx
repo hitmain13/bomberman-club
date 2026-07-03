@@ -33,4 +33,18 @@ describe("CarCard", () => {
     expect(screen.getByText("1.320 kg")).toBeInTheDocument();
     expect(screen.getByText("4,13")).toBeInTheDocument();
   });
+
+  it("does not render an owner row by default", () => {
+    render(<CarCard car={car} />);
+    expect(screen.queryByText(/^@/)).not.toBeInTheDocument();
+  });
+
+  it("renders the owner row when provided", () => {
+    render(<CarCard car={car} owner={{ username: "speed.fabio", avatarUrl: null }} />);
+    expect(screen.getByText("@speed.fabio")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver perfil de @speed.fabio" })).toHaveAttribute(
+      "href",
+      "/u/speed.fabio",
+    );
+  });
 });

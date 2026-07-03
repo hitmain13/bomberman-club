@@ -14,3 +14,4 @@ export { SightingsResource } from "./resources/sightings";
 export type { SightingListResult } from "./resources/sightings";
 export { SocialResource } from "./resources/social";
 export { DiscoveryResource } from "./resources/discovery";
+export type { ExplorePeopleParams, ExploreCarsParams } from "./resources/discovery";

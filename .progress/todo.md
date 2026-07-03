@@ -31,3 +31,7 @@
 - Ranking por likes/popularidade.
 - Dark/Light theme switch.
 - i18n (en-US além de pt-BR).
+- Banner de perfil (`User.bannerUploadId`, mesmo padrão de `avatarUploadId`) — adiado na feature 013, ver ADR 0008.
+- "Último acesso" de membro com configuração de privacidade ("quem pode ver") — adiado na feature 013, ver ADR 0008.
+- Ordenação de Pessoas por "mais carros" no Explorar — precisa de SQL raw ou coluna desnormalizada; adiado na feature 013 (ver ADR 0008).
+- Paginação infinita (usar `nextCursor` já retornado por `/explore/people` e `/explore/cars` — hoje o frontend busca só a primeira página).

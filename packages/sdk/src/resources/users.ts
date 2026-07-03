@@ -1,7 +1,11 @@
 import {
+  type LikedItemsResponse,
   type PrivateUser,
+  type ProfileStats,
   type PublicUser,
+  likedItemsResponseSchema,
   privateUserSchema,
+  profileStatsSchema,
   publicUserSchema,
 } from "@bomberman/types";
 import { z } from "zod";
@@ -41,6 +45,20 @@ export class UsersResource {
       path: "/users/me",
       body,
       responseSchema: privateUserSchema,
+    });
+  }
+
+  stats(username: string): Promise<ProfileStats> {
+    return this.http.request({
+      path: `/users/${encodeURIComponent(username)}/stats`,
+      responseSchema: profileStatsSchema,
+    });
+  }
+
+  likedItems(username: string): Promise<LikedItemsResponse> {
+    return this.http.request({
+      path: `/users/${encodeURIComponent(username)}/likes`,
+      responseSchema: likedItemsResponseSchema,
     });
   }
 }

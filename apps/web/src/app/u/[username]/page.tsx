@@ -7,10 +7,13 @@ import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { CarList, useUserCars } from "@/features/garage";
 import {
+  ProfileAboutTab,
   ProfileHeader,
+  ProfileLikesTab,
   ProfileStats,
   type ProfileTab,
   ProfileTabs,
+  useProfileStats,
   usePublicProfile,
 } from "@/features/profile";
 import { SightingCard, useUserSightings } from "@/features/sightings";
@@ -61,8 +64,7 @@ function UserSightingsTab({ username }: { username: string }): JSX.Element {
 function UserProfileContent({ username }: { username: string }): JSX.Element {
   const { user: currentUser } = useAuth();
   const { data, isLoading, error } = usePublicProfile(username);
-  const { data: cars } = useUserCars(username);
-  const { data: sightings } = useUserSightings(username);
+  const { data: stats } = useProfileStats(username);
 
   if (isLoading) {
     return <StatePanel kind="loading" />;
@@ -72,16 +74,31 @@ function UserProfileContent({ username }: { username: string }): JSX.Element {
   }
 
   const isOwn = currentUser?.username === data.username;
-  const carsCount = cars?.length ?? 0;
-  const sightingsCount = sightings?.length ?? 0;
   const tabs: ReadonlyArray<ProfileTab> = [
+    {
+      id: "about",
+      label: "Sobre",
+      content: (
+        <ProfileAboutTab
+          bio={data.bio}
+          city={data.city}
+          memberSince={data.createdAt}
+          carsCount={stats?.carsCount ?? 0}
+          sightingsCount={stats?.sightingsCount ?? 0}
+        />
+      ),
+    },
     { id: "cars", label: "Carros", content: <UserCarsTab username={username} /> },
     {
       id: "sightings",
       label: "Flagrados",
       content: <UserSightingsTab username={username} />,
     },
-    { id: "gallery", label: "Galeria", content: <StatePanel kind="empty" title="Sem fotos." /> },
+    {
+      id: "likes",
+      label: "Curtidas",
+      content: <ProfileLikesTab username={username} />,
+    },
   ];
 
   return (
@@ -94,7 +111,14 @@ function UserProfileContent({ username }: { username: string }): JSX.Element {
           city: data.city,
           bio: data.bio,
         }}
-        primaryAction={isOwn ? null : <FollowButton username={data.username} />}
+        primaryAction={
+          isOwn ? null : (
+            <FollowButton
+              username={data.username}
+              initialFollowing={stats?.isFollowedByMe ?? false}
+            />
+          )
+        }
         secondaryAction={
           isOwn ? null : (
             <Button variant="secondary" fullWidth disabled>
@@ -105,9 +129,10 @@ function UserProfileContent({ username }: { username: string }): JSX.Element {
       />
       <ProfileStats
         items={[
-          { label: "Carros", value: carsCount },
-          { label: "Flagrados", value: sightingsCount },
-          { label: "Seguidores", value: 0 },
+          { label: "Carros", value: stats?.carsCount ?? 0 },
+          { label: "Flagrados", value: stats?.sightingsCount ?? 0 },
+          { label: "Seguidores", value: stats?.followersCount ?? 0 },
+          { label: "Seguindo", value: stats?.followingCount ?? 0 },
         ]}
       />
       <ProfileTabs tabs={tabs} />

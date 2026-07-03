@@ -13,3 +13,4 @@ export default meta;
 type Story = StoryObj<typeof FollowButton>;
 
 export const Default: Story = {};
+export const AlreadyFollowing: Story = { args: { initialFollowing: true } };

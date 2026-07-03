@@ -20,3 +20,23 @@ export const Default: Story = {
     ],
   },
 };
+
+export const FourColumns: Story = {
+  args: {
+    items: [
+      { label: "Carros", value: 3 },
+      { label: "Flagrados", value: 24 },
+      { label: "Seguidores", value: 1200 },
+      { label: "Seguindo", value: 320 },
+    ],
+  },
+};
+
+export const TwoColumns: Story = {
+  args: {
+    items: [
+      { label: "Seguidores", value: 1200 },
+      { label: "Seguindo", value: 320 },
+    ],
+  },
+};

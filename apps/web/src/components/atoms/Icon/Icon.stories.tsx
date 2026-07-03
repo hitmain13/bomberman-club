@@ -15,3 +15,4 @@ export const HomeIcon: Story = { args: { name: "home", size: "lg" } };
 export const PlusIcon: Story = { args: { name: "plus", size: "lg" } };
 export const MapIcon: Story = { args: { name: "map", size: "lg" } };
 export const UserIcon: Story = { args: { name: "user", size: "lg" } };
+export const FilterIcon: Story = { args: { name: "filter", size: "lg" } };

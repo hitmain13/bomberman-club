@@ -3,7 +3,7 @@ import { Elysia } from "elysia";
 import { authController } from "@/modules/auth";
 import { carsController, userCarsController } from "@/modules/cars";
 import { catalogController } from "@/modules/catalog";
-import { discoveryController } from "@/modules/discovery";
+import { discoveryController, userProfileExtrasController } from "@/modules/discovery";
 import { garagesController } from "@/modules/garages";
 import { sightingsController, userSightingsController } from "@/modules/sightings";
 import { socialController } from "@/modules/social";
@@ -35,5 +35,6 @@ export function createApp() {
     .use(sightingsController)
     .use(userSightingsController)
     .use(socialController)
-    .use(discoveryController);
+    .use(discoveryController)
+    .use(userProfileExtrasController);
 }

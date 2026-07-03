@@ -13,3 +13,5 @@ export {
   SearchTypeSchema,
   type SearchType,
 } from "./feed-scope";
+export { PeopleSortSchema, type PeopleSort } from "./people-sort";
+export { CarsSortSchema, type CarsSort } from "./cars-sort";

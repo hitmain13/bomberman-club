@@ -39,3 +39,6 @@ export const HighPower: Story = {
     car: { ...baseCar, nickname: "Civic Si", horsepowerHp: 450, weightKg: 1280, torqueNm: 550 },
   },
 };
+export const WithOwner: Story = {
+  args: { owner: { username: "speed.fabio", avatarUrl: null } },
+};

@@ -1,8 +1,9 @@
 import type { RankingItem, RankingMetric } from "@bomberman/types";
 import type { Prisma } from "@prisma/client";
 
-import { prisma } from "@/database/prisma";
 import { toCarResponse } from "@/modules/cars/mappers/cars.mapper";
+
+import { discoveryRepository } from "../repositories/discovery.repository";
 
 const TOP_N = 20;
 
@@ -37,14 +38,7 @@ function computeMetric(
 
 export class RankingService {
   async top(metric: RankingMetric): Promise<{ items: RankingItem[] }> {
-    const cars = await prisma.car.findMany({
-      take: TOP_N,
-      orderBy: orderBy(metric),
-      include: {
-        cover: { select: { url: true } },
-        garage: { include: { user: { include: { avatar: true } } } },
-      },
-    });
+    const cars = await discoveryRepository.listCarsRanked(orderBy(metric), TOP_N);
     const items: RankingItem[] = cars.map((car) => ({
       car: toCarResponse(car),
       owner: {

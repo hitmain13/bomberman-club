@@ -1,8 +1,9 @@
 import type { SearchResponse, SearchType } from "@bomberman/types";
 
-import { prisma } from "@/database/prisma";
 import { toCarResponse } from "@/modules/cars/mappers/cars.mapper";
 import { toSightingResponse } from "@/modules/sightings/mappers/sightings.mapper";
+
+import { discoveryRepository } from "../repositories/discovery.repository";
 
 const LIMIT = 10;
 
@@ -10,16 +11,7 @@ async function searchPeople(query: string): Promise<SearchResponse["people"]> {
   if (query.length === 0) {
     return [];
   }
-  const users = await prisma.user.findMany({
-    where: {
-      OR: [
-        { username: { contains: query, mode: "insensitive" } },
-        { city: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: LIMIT,
-    include: { avatar: true },
-  });
+  const users = await discoveryRepository.searchPeople(query, LIMIT);
   return users.map((user) => ({
     id: user.id,
     username: user.username,
@@ -34,17 +26,7 @@ async function searchCars(query: string): Promise<SearchResponse["cars"]> {
   if (query.length === 0) {
     return [];
   }
-  const cars = await prisma.car.findMany({
-    where: {
-      OR: [
-        { nickname: { contains: query, mode: "insensitive" } },
-        { brand: { contains: query, mode: "insensitive" } },
-        { model: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: LIMIT,
-    include: { cover: { select: { url: true } } },
-  });
+  const cars = await discoveryRepository.searchCars(query, LIMIT);
   return cars.map(toCarResponse);
 }
 
@@ -52,16 +34,7 @@ async function searchSightings(query: string): Promise<SearchResponse["sightings
   if (query.length === 0) {
     return [];
   }
-  const sightings = await prisma.sighting.findMany({
-    where: {
-      OR: [
-        { title: { contains: query, mode: "insensitive" } },
-        { description: { contains: query, mode: "insensitive" } },
-      ],
-    },
-    take: LIMIT,
-    include: { upload: true, user: { include: { avatar: true } } },
-  });
+  const sightings = await discoveryRepository.searchSightings(query, LIMIT);
   return sightings.map(toSightingResponse);
 }
 

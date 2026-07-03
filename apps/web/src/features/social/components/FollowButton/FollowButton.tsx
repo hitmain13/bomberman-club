@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button } from "@/components/atoms/Button";
 
@@ -8,9 +8,18 @@ import { useToggleFollow } from "../../hooks/use-follow";
 
 import type { FollowButtonProps } from "./FollowButton.types";
 
-export function FollowButton({ username, className }: FollowButtonProps): JSX.Element {
+export function FollowButton({
+  username,
+  initialFollowing = false,
+  onToggled,
+  className,
+}: FollowButtonProps): JSX.Element {
   const mutation = useToggleFollow(username);
-  const [following, setFollowing] = useState(false);
+  const [following, setFollowing] = useState(initialFollowing);
+
+  useEffect(() => {
+    setFollowing(initialFollowing);
+  }, [initialFollowing]);
 
   return (
     <Button
@@ -20,7 +29,10 @@ export function FollowButton({ username, className }: FollowButtonProps): JSX.El
       isLoading={mutation.isPending}
       onClick={() =>
         mutation.mutate(undefined, {
-          onSuccess: (data) => setFollowing(data.following),
+          onSuccess: (data) => {
+            setFollowing(data.following);
+            onToggled?.(data.following);
+          },
         })
       }
     >

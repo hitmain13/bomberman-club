@@ -11,8 +11,13 @@ function withClient(node: ReactNode): JSX.Element {
 }
 
 describe("FollowButton", () => {
-  it("starts as 'Seguir'", () => {
+  it("starts as 'Seguir' by default", () => {
     render(withClient(<FollowButton username="speed.fabio" />));
     expect(screen.getByRole("button", { name: "Seguir" })).toBeInTheDocument();
+  });
+
+  it("starts as 'Seguindo' when initialFollowing is true", () => {
+    render(withClient(<FollowButton username="speed.fabio" initialFollowing />));
+    expect(screen.getByRole("button", { name: "Seguindo" })).toBeInTheDocument();
   });
 });

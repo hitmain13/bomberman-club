@@ -36,6 +36,25 @@ export class SightingsRepository {
     });
   }
 
+  listIdsByUsername(username: string): Promise<string[]> {
+    return prisma.sighting
+      .findMany({ where: { user: { username } }, select: { id: true } })
+      .then((rows) => rows.map((row) => row.id));
+  }
+
+  findManyByIds(ids: string[]): Promise<SightingWithRelations[]> {
+    if (ids.length === 0) {
+      return Promise.resolve([]);
+    }
+    return prisma.sighting.findMany({ where: { id: { in: ids } }, include: includeRelations });
+  }
+
+  findOwnerId(sightingId: string): Promise<string | null> {
+    return prisma.sighting
+      .findUnique({ where: { id: sightingId }, select: { userId: true } })
+      .then((row) => row?.userId ?? null);
+  }
+
   findById(id: string): Promise<SightingWithRelations | null> {
     return prisma.sighting.findUnique({ where: { id }, include: includeRelations });
   }

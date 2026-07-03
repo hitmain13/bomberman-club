@@ -10,4 +10,7 @@ export const styles = {
   nickname: "text-base font-semibold leading-tight",
   subtitle: "text-xs text-fg-muted",
   metrics: "grid grid-cols-3 gap-3",
+  owner: "flex items-center gap-2 border-t border-border-subtle px-4 py-2.5",
+  ownerAvatar: "h-5 w-5",
+  ownerUsername: "text-xs font-medium text-fg-secondary",
 } as const;

@@ -1,52 +1,11 @@
 import type { FeedItem, FeedScope } from "@bomberman/types";
 
-import { prisma } from "@/database/prisma";
 import { toCarResponse } from "@/modules/cars/mappers/cars.mapper";
 import { toSightingResponse } from "@/modules/sightings/mappers/sightings.mapper";
 
+import { discoveryRepository } from "../repositories/discovery.repository";
+
 const FEED_LIMIT = 40;
-
-async function listRecentCars(): Promise<FeedItem[]> {
-  const cars = await prisma.car.findMany({
-    take: FEED_LIMIT,
-    orderBy: { updatedAt: "desc" },
-    include: { cover: { select: { url: true } } },
-  });
-  return cars.map((car) => ({ kind: "CAR" as const, item: toCarResponse(car) }));
-}
-
-async function listRecentSightings(): Promise<FeedItem[]> {
-  const sightings = await prisma.sighting.findMany({
-    take: FEED_LIMIT,
-    orderBy: { occurredAt: "desc" },
-    include: { upload: true, user: { include: { avatar: true } } },
-  });
-  return sightings.map((sighting) => ({
-    kind: "SIGHTING" as const,
-    item: toSightingResponse(sighting),
-  }));
-}
-
-async function listFollowingFeed(userId: string): Promise<FeedItem[]> {
-  const follows = await prisma.follow.findMany({
-    where: { followerId: userId },
-    select: { followingId: true },
-  });
-  const followingIds = follows.map((follow) => follow.followingId);
-  if (followingIds.length === 0) {
-    return [];
-  }
-  const sightings = await prisma.sighting.findMany({
-    where: { userId: { in: followingIds } },
-    take: FEED_LIMIT,
-    orderBy: { occurredAt: "desc" },
-    include: { upload: true, user: { include: { avatar: true } } },
-  });
-  return sightings.map((sighting) => ({
-    kind: "SIGHTING" as const,
-    item: toSightingResponse(sighting),
-  }));
-}
 
 function sortByDate(items: FeedItem[]): FeedItem[] {
   return [...items].sort((a, b) => {
@@ -54,6 +13,31 @@ function sortByDate(items: FeedItem[]): FeedItem[] {
     const bDate = b.kind === "SIGHTING" ? b.item.occurredAt : b.item.updatedAt;
     return new Date(bDate).getTime() - new Date(aDate).getTime();
   });
+}
+
+async function listRecentCars(): Promise<FeedItem[]> {
+  const cars = await discoveryRepository.listRecentCars(FEED_LIMIT);
+  return cars.map((car) => ({ kind: "CAR" as const, item: toCarResponse(car) }));
+}
+
+async function listRecentSightings(): Promise<FeedItem[]> {
+  const sightings = await discoveryRepository.listRecentSightings(FEED_LIMIT);
+  return sightings.map((sighting) => ({
+    kind: "SIGHTING" as const,
+    item: toSightingResponse(sighting),
+  }));
+}
+
+async function listFollowingFeed(userId: string): Promise<FeedItem[]> {
+  const followingIds = await discoveryRepository.listFollowingIds(userId);
+  if (followingIds.length === 0) {
+    return [];
+  }
+  const sightings = await discoveryRepository.listSightingsByAuthors(followingIds, FEED_LIMIT);
+  return sightings.map((sighting) => ({
+    kind: "SIGHTING" as const,
+    item: toSightingResponse(sighting),
+  }));
 }
 
 export class FeedService {

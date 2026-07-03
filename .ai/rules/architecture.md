@@ -29,8 +29,19 @@ Postgres • Redis • S3/MinIO
 - **Configurability** — specifications (EAV), parts, part categories.
 - **Sightings** — flagrados (foto + geo).
 - **Social** — comments, likes, favorites, follows, notifications.
-- **Discovery** — feed, search, map, ranking.
+- **Discovery** — feed, search, ranking, explore (people/cars), estatísticas de perfil, itens curtidos. Camada de leitura/agregação cross-context (read-model layer) — ver ADR 0008.
 - **Media** — uploads.
+
+## Grafo de dependências entre módulos (ADR 0008)
+
+```
+auth ──────► users
+social ────► users
+cars ──────► catalog
+discovery ─► cars, sightings, social, users
+```
+
+Módulos de domínio nunca importam de `discovery`. Qualquer service que precise agregar dados de 2+ módulos mora em `discovery`, mesmo que a rota HTTP fique sob o prefixo de outro módulo (ex.: `/users/:username/stats`).
 
 ## Tipo-segurança ponta a ponta
 
