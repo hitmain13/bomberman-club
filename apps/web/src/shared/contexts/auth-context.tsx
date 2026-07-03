@@ -15,6 +15,7 @@ interface AuthContextValue {
   signIn: (identifier: string, password: string) => Promise<void>;
   signUp: (username: string, email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: (user: PrivateUser) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -87,6 +88,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
     }
   }, [clearSession]);
 
+  const refreshUser = useCallback(
+    (nextUser: PrivateUser) => {
+      setUser(nextUser);
+      queryClient.setQueryData(queryKeys.auth.me(), nextUser);
+    },
+    [queryClient],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -95,8 +104,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
       signIn,
       signUp,
       signOut,
+      refreshUser,
     }),
-    [user, isLoading, signIn, signUp, signOut],
+    [user, isLoading, signIn, signUp, signOut, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

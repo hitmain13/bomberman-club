@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Avatar } from "@/components/atoms/Avatar";
@@ -10,7 +10,6 @@ import { FormField } from "@/components/molecules/FormField";
 import { getAuthErrorMessage } from "@/features/auth/utils/error-message";
 import { cn } from "@/shared/utils/cn";
 
-import { useUpdateAvatar } from "../../hooks/use-update-avatar";
 import { useUpdateProfile } from "../../hooks/use-update-profile";
 import { type EditProfileValues, editProfileSchema } from "../../schemas";
 
@@ -19,7 +18,9 @@ import type { EditProfileFormProps } from "./EditProfileForm.types";
 
 export function EditProfileForm({ user, className }: EditProfileFormProps): JSX.Element {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarPreviewRef = useRef<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const {
     register,
     handleSubmit,
@@ -33,31 +34,38 @@ export function EditProfileForm({ user, className }: EditProfileFormProps): JSX.
     },
   });
   const mutation = useUpdateProfile();
-  const avatarMutation = useUpdateAvatar();
+  const canSave = isDirty || pendingAvatarFile !== null;
 
-  const handlePhotoSelect = async (event: React.ChangeEvent<HTMLInputElement>): Promise<void> => {
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewRef.current) {
+        URL.revokeObjectURL(avatarPreviewRef.current);
+      }
+    };
+  }, []);
+
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) {
       return;
     }
-    const preview = URL.createObjectURL(file);
-    setAvatarUrl(preview);
-    try {
-      const updated = await avatarMutation.mutateAsync(file);
-      setAvatarUrl(updated.avatarUrl);
-    } catch {
-      setAvatarUrl(user.avatarUrl);
-    } finally {
-      URL.revokeObjectURL(preview);
+    if (avatarPreviewRef.current) {
+      URL.revokeObjectURL(avatarPreviewRef.current);
     }
+    const preview = URL.createObjectURL(file);
+    avatarPreviewRef.current = preview;
+    setPendingAvatarFile(file);
+    setAvatarUrl(preview);
   };
 
   return (
     <form
       noValidate
       className={cn(styles.root, className)}
-      onSubmit={handleSubmit((values) => mutation.mutate(values))}
+      onSubmit={handleSubmit((values) =>
+        mutation.mutate({ values, avatarFile: pendingAvatarFile }),
+      )}
     >
       <div className={styles.avatarRow}>
         <Avatar src={avatarUrl} alt={user.username} size="xl" />
@@ -71,14 +79,11 @@ export function EditProfileForm({ user, className }: EditProfileFormProps): JSX.
         <button
           type="button"
           className={styles.changePhoto}
-          disabled={avatarMutation.isPending}
+          disabled={mutation.isPending}
           onClick={() => fileInputRef.current?.click()}
         >
-          {avatarMutation.isPending ? "Enviando…" : "Alterar foto"}
+          Alterar foto
         </button>
-        {avatarMutation.error ? (
-          <p className={styles.error}>{getAuthErrorMessage(avatarMutation.error)}</p>
-        ) : null}
       </div>
       {mutation.error ? (
         <p className={styles.error}>{getAuthErrorMessage(mutation.error)}</p>
@@ -102,7 +107,7 @@ export function EditProfileForm({ user, className }: EditProfileFormProps): JSX.
         errorMessage={errors.bio?.message}
         {...register("bio")}
       />
-      <Button type="submit" fullWidth isLoading={mutation.isPending} disabled={!isDirty}>
+      <Button type="submit" fullWidth isLoading={mutation.isPending} disabled={!canSave}>
         Salvar alterações
       </Button>
     </form>
