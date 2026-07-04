@@ -70,8 +70,10 @@ export class HttpClient {
       if (refreshed) {
         return this.request({ ...options, skipAuthRetry: true });
       }
-      this.onUnauthorized?.();
-    } else if (response.status === 401) {
+      if (!options.path.startsWith("/auth/")) {
+        this.onUnauthorized?.();
+      }
+    } else if (response.status === 401 && !options.path.startsWith("/auth/")) {
       this.onUnauthorized?.();
     }
 

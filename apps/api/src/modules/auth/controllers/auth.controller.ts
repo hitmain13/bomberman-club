@@ -14,17 +14,39 @@ type SetHeaders = {
   headers: Record<string, string | number | string[] | undefined>;
 };
 
+function usesSecureCookies(): boolean {
+  return env.COOKIE_SECURE || env.NODE_ENV === "production";
+}
+
+function resolveCookieDomain(): string | undefined {
+  if (!env.COOKIE_DOMAIN) {
+    return undefined;
+  }
+  try {
+    const webHost = new URL(env.WEB_ORIGIN).hostname;
+    const apiHost = new URL(env.API_BASE_URL).hostname;
+    if (webHost !== apiHost) {
+      return undefined;
+    }
+  } catch {
+    return undefined;
+  }
+  return env.COOKIE_DOMAIN;
+}
+
 function refreshCookieOptions(expiresAt: Date): Parameters<typeof serialize>[2] {
+  const secure = usesSecureCookies();
   const options: Parameters<typeof serialize>[2] = {
     httpOnly: true,
-    secure: env.COOKIE_SECURE,
-    sameSite: env.COOKIE_SECURE ? "none" : "lax",
-    path: "/auth",
+    secure,
+    sameSite: secure ? "none" : "lax",
+    path: "/",
     maxAge: env.JWT_REFRESH_TTL_DAYS * 24 * 60 * 60,
     expires: expiresAt,
   };
-  if (env.COOKIE_DOMAIN) {
-    options.domain = env.COOKIE_DOMAIN;
+  const domain = resolveCookieDomain();
+  if (domain) {
+    options.domain = domain;
   }
   return options;
 }
@@ -43,20 +65,36 @@ function appendSetCookie(set: SetHeaders, value: string): void {
 }
 
 function setRefreshCookie(set: SetHeaders, token: string, expiresAt: Date): void {
-  appendSetCookie(set, serialize(REFRESH_COOKIE, token, refreshCookieOptions(expiresAt)));
-}
-
-function clearRefreshCookie(set: SetHeaders): void {
-  const options: Parameters<typeof serialize>[2] = {
+  const secure = usesSecureCookies();
+  const legacyClear: Parameters<typeof serialize>[2] = {
     httpOnly: true,
-    secure: env.COOKIE_SECURE,
-    sameSite: env.COOKIE_SECURE ? "none" : "lax",
+    secure,
+    sameSite: secure ? "none" : "lax",
     path: "/auth",
     expires: new Date(0),
     maxAge: 0,
   };
-  if (env.COOKIE_DOMAIN) {
-    options.domain = env.COOKIE_DOMAIN;
+  const domain = resolveCookieDomain();
+  if (domain) {
+    legacyClear.domain = domain;
+  }
+  appendSetCookie(set, serialize(REFRESH_COOKIE, "", legacyClear));
+  appendSetCookie(set, serialize(REFRESH_COOKIE, token, refreshCookieOptions(expiresAt)));
+}
+
+function clearRefreshCookie(set: SetHeaders): void {
+  const secure = usesSecureCookies();
+  const options: Parameters<typeof serialize>[2] = {
+    httpOnly: true,
+    secure,
+    sameSite: secure ? "none" : "lax",
+    path: "/",
+    expires: new Date(0),
+    maxAge: 0,
+  };
+  const domain = resolveCookieDomain();
+  if (domain) {
+    options.domain = domain;
   }
   appendSetCookie(set, serialize(REFRESH_COOKIE, "", options));
 }

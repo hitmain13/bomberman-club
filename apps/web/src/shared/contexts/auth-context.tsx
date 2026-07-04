@@ -19,6 +19,12 @@ import {
   setRefreshAccessToken,
 } from "@/shared/lib/api-client";
 import { queryKeys } from "@/shared/lib/query-keys";
+import { refreshSession } from "@/shared/lib/refresh-session";
+import {
+  clearPersistedSession,
+  persistSession,
+  readPersistedSession,
+} from "@/shared/lib/session-persistence";
 
 interface AuthContextValue {
   user: PrivateUser | null;
@@ -32,16 +38,32 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function restorePersistedSession(): { user: PrivateUser; accessToken: string } | null {
+  const persisted = readPersistedSession();
+  if (!persisted) {
+    return null;
+  }
+  setAccessToken(persisted.accessToken);
+  return { user: persisted.user, accessToken: persisted.accessToken };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }): JSX.Element {
-  const [user, setUser] = useState<PrivateUser | null>(null);
+  const [user, setUser] = useState<PrivateUser | null>(
+    () => restorePersistedSession()?.user ?? null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const isBootstrappingRef = useRef(true);
   const queryClient = useQueryClient();
 
   const applySession = useCallback(
-    (session: { user: PrivateUser; accessToken: string }) => {
+    (session: { user: PrivateUser; accessToken: string; expiresIn?: number }) => {
       setAccessToken(session.accessToken);
       setUser(session.user);
+      persistSession({
+        user: session.user,
+        accessToken: session.accessToken,
+        expiresIn: session.expiresIn ?? 900,
+      });
       queryClient.setQueryData(queryKeys.auth.me(), session.user);
     },
     [queryClient],
@@ -50,50 +72,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
   const clearSession = useCallback(() => {
     setAccessToken(null);
     setUser(null);
+    clearPersistedSession();
     queryClient.removeQueries({ queryKey: queryKeys.auth.me() });
   }, [queryClient]);
 
   useEffect(() => {
     let cancelled = false;
     isBootstrappingRef.current = true;
+
     onUnauthorized(() => {
       if (!isBootstrappingRef.current) {
         clearSession();
       }
     });
+
     setRefreshAccessToken(async () => {
-      try {
-        const session = await apiClient.auth.refresh();
-        if (cancelled) {
-          return null;
-        }
-        applySession(session);
-        return session.accessToken;
-      } catch {
+      const session = await refreshSession();
+      if (cancelled || !session) {
         return null;
       }
+      applySession(session);
+      return session.accessToken;
     });
+
     void (async () => {
-      try {
-        const session = await apiClient.auth.refresh();
-        if (!cancelled) {
-          applySession(session);
-        }
-      } catch {
-        if (!cancelled) {
-          clearSession();
-        }
-      } finally {
-        if (!cancelled) {
-          isBootstrappingRef.current = false;
-          setIsLoading(false);
-        }
+      const session = await refreshSession();
+      if (cancelled) {
+        return;
       }
-    })();
+
+      if (session) {
+        applySession(session);
+        return;
+      }
+
+      const persisted = readPersistedSession();
+      if (persisted) {
+        setAccessToken(persisted.accessToken);
+        setUser(persisted.user);
+        queryClient.setQueryData(queryKeys.auth.me(), persisted.user);
+        return;
+      }
+
+      clearSession();
+    })().finally(() => {
+      if (!cancelled) {
+        isBootstrappingRef.current = false;
+        setIsLoading(false);
+      }
+    });
+
     return () => {
       cancelled = true;
     };
-  }, [applySession, clearSession]);
+  }, [applySession, clearSession, queryClient]);
 
   const signIn = useCallback(
     async (identifier: string, password: string) => {
@@ -123,6 +155,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
     (nextUser: PrivateUser) => {
       setUser(nextUser);
       queryClient.setQueryData(queryKeys.auth.me(), nextUser);
+      const persisted = readPersistedSession();
+      if (persisted) {
+        persistSession({
+          user: nextUser,
+          accessToken: persisted.accessToken,
+          expiresIn: Math.max(1, Math.floor((persisted.expiresAt - Date.now()) / 1000)),
+        });
+      }
     },
     [queryClient],
   );
