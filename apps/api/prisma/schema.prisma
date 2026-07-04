@@ -272,6 +272,7 @@ model Sighting {
   description String?
   latitude    Float
   longitude   Float
+  street      String?
   locationLabel String?
   occurredAt  DateTime
   createdAt   DateTime @default(now())

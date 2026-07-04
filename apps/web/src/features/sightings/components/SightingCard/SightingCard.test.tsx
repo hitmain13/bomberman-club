@@ -14,6 +14,7 @@ const sighting: SightingResponse = {
   description: "Vista incrível com tanto carro novo.",
   latitude: -23.55,
   longitude: -46.63,
+  street: "Rua Augusta, Consolação",
   locationLabel: "Rua Augusta, Consolação",
   occurredAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),

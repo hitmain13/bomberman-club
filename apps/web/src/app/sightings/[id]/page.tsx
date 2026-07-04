@@ -11,6 +11,7 @@ import { Icon } from "@/components/atoms/Icon";
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { formatDateTime, useDeleteSighting, useSighting } from "@/features/sightings";
+import { formatSightingLocation } from "@/features/sightings/utils/format-location";
 import { CommentsThread, LikeButton } from "@/features/social";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
@@ -40,8 +41,7 @@ function Content({ id }: { id: string }): JSX.Element {
   }
 
   const isOwner = user?.id === data.userId;
-  const locationText =
-    data.locationLabel ?? `${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}`;
+  const locationText = formatSightingLocation(data);
 
   return (
     <article className="flex flex-col gap-4">

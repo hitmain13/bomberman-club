@@ -17,6 +17,7 @@
     "db:reset": "prisma migrate reset --schema prisma/schema.prisma --force",
     "db:seed": "bun run prisma/seed.ts",
     "db:seed:users": "bun run prisma/seed-users.ts",
+    "db:backfill:street": "bun run scripts/backfill-street.ts",
     "db:studio": "prisma studio --schema prisma/schema.prisma"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "cookie": "0.7.2",
     "elysia": "^1.1.27",
     "jose": "^5.9.6",
+    "ioredis": "^5.4.2",
     "pino": "^9.5.0",
     "prisma": "^5.22.0",
     "zod": "^3.23.8"

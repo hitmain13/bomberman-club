@@ -1,6 +1,7 @@
 import { type SightingInput, type SightingResponse, periodStartDate } from "@bomberman/types";
 
 import { ForbiddenError, NotFoundError } from "@/common/errors";
+import { getReverseGeocodeService } from "@/shared/geo/reverse-geocode";
 
 import { toSightingResponse } from "../mappers/sightings.mapper";
 import { sightingsRepository } from "../repositories/sightings.repository";
@@ -47,6 +48,11 @@ export class SightingsService {
   }
 
   async create(userId: string, input: SightingInput): Promise<SightingResponse> {
+    let street = input.street ?? input.locationLabel ?? null;
+    if (!street) {
+      street = await getReverseGeocodeService().resolve(input.latitude, input.longitude);
+    }
+
     const created = await sightingsRepository.create({
       userId,
       uploadId: input.uploadId,
@@ -54,7 +60,8 @@ export class SightingsService {
       description: input.description ?? null,
       latitude: input.latitude,
       longitude: input.longitude,
-      locationLabel: input.locationLabel ?? null,
+      street,
+      locationLabel: street,
       occurredAt: new Date(input.occurredAt),
     });
     return toSightingResponse(created);

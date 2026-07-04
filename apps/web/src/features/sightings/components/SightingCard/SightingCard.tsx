@@ -6,14 +6,14 @@ import { Icon } from "@/components/atoms/Icon";
 import { cn } from "@/shared/utils/cn";
 
 import { formatRelative } from "../../utils/format-date";
+import { formatSightingLocation } from "../../utils/format-location";
 
 import { styles } from "./SightingCard.styles";
 import type { SightingCardProps } from "./SightingCard.types";
 
 export function SightingCard({ sighting, href, className }: SightingCardProps): JSX.Element {
   const target = href ?? `/sightings/${sighting.id}`;
-  const locationText =
-    sighting.locationLabel ?? `${sighting.latitude.toFixed(5)}, ${sighting.longitude.toFixed(5)}`;
+  const locationText = formatSightingLocation(sighting);
 
   return (
     <Link href={target} className={cn(styles.root, className)} aria-label={sighting.title}>

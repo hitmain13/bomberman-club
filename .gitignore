@@ -38,7 +38,10 @@ test-results
 .parcel-cache
 
 # bun
-bun.lockb.backup
+bun.lockb
+
+# geo backfill checkpoint
+apps/api/scripts/.backfill-street-checkpoint.json
 
 # storybook
 storybook-static

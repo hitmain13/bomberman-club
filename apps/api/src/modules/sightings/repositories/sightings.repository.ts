@@ -66,6 +66,7 @@ export class SightingsRepository {
     description: string | null;
     latitude: number;
     longitude: number;
+    street: string | null;
     locationLabel: string | null;
     occurredAt: Date;
   }): Promise<SightingWithRelations> {

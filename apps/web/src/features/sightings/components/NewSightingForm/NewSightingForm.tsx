@@ -11,7 +11,6 @@ import { Icon } from "@/components/atoms/Icon";
 import { Spinner } from "@/components/atoms/Spinner";
 import { FormField } from "@/components/molecules/FormField";
 import { StatePanel } from "@/components/organisms/StatePanel";
-import { reverseGeocode } from "@/shared/utils/reverse-geocode";
 
 import { useUploadImage } from "../../hooks/use-sighting-mutations";
 import { type NewSightingPayload, type NewSightingValues, newSightingSchema } from "../../schemas";
@@ -48,7 +47,6 @@ export function NewSightingForm({
   const [step, setStep] = useState<Step>("photo");
   const [preview, setPreview] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [locationLabel, setLocationLabel] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const {
     register,
@@ -64,7 +62,6 @@ export function NewSightingForm({
       description: "",
       latitude: 0,
       longitude: 0,
-      locationLabel: null,
       occurredAt: localDatetimeNow(),
     },
   });
@@ -74,12 +71,9 @@ export function NewSightingForm({
   const longitude = watch("longitude");
   const hasLocation = latitude !== 0 || longitude !== 0;
 
-  const applyLocation = async (lat: number, lng: number): Promise<void> => {
+  const applyLocation = (lat: number, lng: number): void => {
     setValue("latitude", lat, { shouldValidate: true, shouldDirty: true });
     setValue("longitude", lng, { shouldValidate: true, shouldDirty: true });
-    const label = await reverseGeocode(lat, lng);
-    setLocationLabel(label);
-    setValue("locationLabel", label, { shouldValidate: true, shouldDirty: true });
   };
 
   const collectLocation = (): void => {
@@ -92,9 +86,8 @@ export function NewSightingForm({
     }
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        void applyLocation(position.coords.latitude, position.coords.longitude).finally(() => {
-          setStep("form");
-        });
+        applyLocation(position.coords.latitude, position.coords.longitude);
+        setStep("form");
       },
       (error) => {
         setGeoError(
@@ -208,7 +201,6 @@ export function NewSightingForm({
             description: values.description ?? null,
             latitude: values.latitude,
             longitude: values.longitude,
-            locationLabel: values.locationLabel ?? locationLabel,
             occurredAt: values.occurredAt,
           }),
         )}
@@ -234,7 +226,6 @@ export function NewSightingForm({
 
         <input type="hidden" {...register("latitude", { valueAsNumber: true })} />
         <input type="hidden" {...register("longitude", { valueAsNumber: true })} />
-        <input type="hidden" {...register("locationLabel")} />
         <div>
           <p className="pb-2 text-xs uppercase tracking-wider text-fg-muted">Localização</p>
           <button
@@ -245,14 +236,18 @@ export function NewSightingForm({
             <span className="flex min-w-0 items-center gap-2 text-sm text-fg-primary">
               <Icon name="map" size="sm" />
               <span className="truncate">
-                {locationLabel ??
-                  (hasLocation
-                    ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
-                    : "Escolher no mapa")}
+                {hasLocation
+                  ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+                  : "Escolher no mapa"}
               </span>
             </span>
             <Icon name="chevron-right" size="sm" />
           </button>
+          {hasLocation ? (
+            <p className={`mt-1 ${styles.hint}`}>
+              O nome da rua será obtido automaticamente ao publicar.
+            </p>
+          ) : null}
           {geoError && !hasLocation ? <p className={`mt-1 ${styles.hint}`}>{geoError}</p> : null}
           {errors.latitude || errors.longitude ? (
             <p className={`mt-1 ${styles.hint}`}>Selecione um local válido.</p>
@@ -284,7 +279,7 @@ export function NewSightingForm({
         initialLongitude={hasLocation ? longitude : null}
         onCancel={() => setPickerOpen(false)}
         onConfirm={(lat, lng) => {
-          void applyLocation(lat, lng);
+          applyLocation(lat, lng);
           setPickerOpen(false);
         }}
       />

@@ -11,6 +11,8 @@ export const sightingInputSchema = z.object({
   description: z.string().max(500).nullable().optional(),
   latitude: latitudeSchema,
   longitude: longitudeSchema,
+  street: z.string().max(200).nullable().optional(),
+  /** @deprecated Prefer `street`; kept for backward compatibility with older clients. */
   locationLabel: z.string().max(200).nullable().optional(),
   occurredAt: z.string().datetime(),
 });
@@ -31,6 +33,7 @@ export const sightingResponseSchema = z.object({
   description: z.string().nullable(),
   latitude: latitudeSchema,
   longitude: longitudeSchema,
+  street: z.string().nullable(),
   locationLabel: z.string().nullable(),
   occurredAt: z.string().datetime(),
   createdAt: z.string().datetime(),
