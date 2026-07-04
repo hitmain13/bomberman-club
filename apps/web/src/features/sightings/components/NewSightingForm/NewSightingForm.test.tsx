@@ -11,10 +11,11 @@ function withClient(node: ReactNode): JSX.Element {
 }
 
 describe("NewSightingForm", () => {
-  it("starts on photo capture step with camera and gallery actions", () => {
+  it("shows capture actions and form fields on the same screen", () => {
     render(withClient(<NewSightingForm onSubmit={vi.fn()} />));
     expect(screen.getByRole("button", { name: "Abrir câmera" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Escolher da galeria" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Publicar flagrado" })).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Título")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Publicar flagrado" })).toBeDisabled();
   });
 });

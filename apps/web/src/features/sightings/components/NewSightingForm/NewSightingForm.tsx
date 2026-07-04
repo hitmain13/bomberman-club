@@ -2,19 +2,17 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import dynamic from "next/dynamic";
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/atoms/Button";
 import { Icon } from "@/components/atoms/Icon";
-import { Spinner } from "@/components/atoms/Spinner";
 import { FormField } from "@/components/molecules/FormField";
-import { StatePanel } from "@/components/organisms/StatePanel";
-import { compressImage } from "@/shared/utils/compress-image";
+import { useUploadImage } from "@/shared/hooks/use-upload-image";
 
-import { useUploadImage } from "../../hooks/use-sighting-mutations";
 import { type NewSightingPayload, type NewSightingValues, newSightingSchema } from "../../schemas";
+import { type PhotoDraftItem, SortablePhotoGrid } from "../SortablePhotoGrid/SortablePhotoGrid";
+import { reorderPhotos } from "../SortablePhotoGrid/SortablePhotoGrid.logic";
 
 import { styles } from "./NewSightingForm.styles";
 import type { NewSightingFormProps } from "./NewSightingForm.types";
@@ -27,17 +25,14 @@ const LocationPicker = dynamic(
   { ssr: false },
 );
 
-type Step = "photo" | "locating" | "form";
-
-interface PhotoDraft {
-  preview: string;
-  uploadId: string;
-}
-
 function localDatetimeNow(): string {
   const now = new Date();
   const tzOffset = now.getTimezoneOffset() * 60_000;
   return new Date(now.getTime() - tzOffset).toISOString().slice(0, 16);
+}
+
+function createLocalId(): string {
+  return `local_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
 export function NewSightingForm({
@@ -49,12 +44,12 @@ export function NewSightingForm({
   const upload = useUploadImage();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
-  const addMoreInputRef = useRef<HTMLInputElement>(null);
   const autoCaptureTriggered = useRef(false);
-  const [step, setStep] = useState<Step>("photo");
-  const [photos, setPhotos] = useState<PhotoDraft[]>([]);
+  const geolocationRequested = useRef(false);
+  const [photos, setPhotos] = useState<PhotoDraftItem[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
   const {
     register,
     setValue,
@@ -77,34 +72,36 @@ export function NewSightingForm({
   const latitude = watch("latitude");
   const longitude = watch("longitude");
   const hasLocation = latitude !== 0 || longitude !== 0;
-  const coverPreview = photos[0]?.preview ?? null;
+  const hasPhotos = photos.length > 0;
+  const allUploaded = photos.length > 0 && photos.every((photo) => photo.status === "done");
+  const anyUploading = photos.some((photo) => photo.status === "uploading");
 
-  const syncUploadIds = (nextPhotos: PhotoDraft[]): void => {
-    setPhotos(nextPhotos);
-    setValue(
-      "uploadIds",
-      nextPhotos.map((photo) => photo.uploadId),
-      { shouldValidate: true },
-    );
-  };
+  const applyLocation = useCallback(
+    (lat: number, lng: number): void => {
+      setValue("latitude", lat, { shouldValidate: true, shouldDirty: true });
+      setValue("longitude", lng, { shouldValidate: true, shouldDirty: true });
+    },
+    [setValue],
+  );
 
-  const applyLocation = (lat: number, lng: number): void => {
-    setValue("latitude", lat, { shouldValidate: true, shouldDirty: true });
-    setValue("longitude", lng, { shouldValidate: true, shouldDirty: true });
-  };
-
-  const collectLocation = (): void => {
-    setStep("locating");
-    setGeoError(null);
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      setGeoError("Geolocalização não suportada neste dispositivo.");
-      setStep("form");
+  const requestLocation = useCallback((): void => {
+    if (geolocationRequested.current) {
       return;
     }
+    geolocationRequested.current = true;
+    setLocating(true);
+    setGeoError(null);
+
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeoError("Geolocalização não suportada neste dispositivo.");
+      setLocating(false);
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         applyLocation(position.coords.latitude, position.coords.longitude);
-        setStep("form");
+        setLocating(false);
       },
       (error) => {
         setGeoError(
@@ -112,30 +109,86 @@ export function NewSightingForm({
             ? "Permissão de localização negada. Escolha no mapa."
             : "Não foi possível obter sua localização. Escolha no mapa.",
         );
-        setStep("form");
+        setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
     );
-  };
+  }, [applyLocation]);
 
-  const uploadFiles = async (files: File[]): Promise<void> => {
-    const remaining = 10 - photos.length;
-    const batch = files.slice(0, remaining);
-    if (batch.length === 0) {
-      return;
-    }
-    const uploaded: PhotoDraft[] = [];
-    for (const file of batch) {
-      const { file: compressed } = await compressImage(file);
-      const result = await upload.mutateAsync(compressed);
-      uploaded.push({ preview: URL.createObjectURL(compressed), uploadId: result.id });
-    }
-    const nextPhotos = [...photos, ...uploaded];
-    syncUploadIds(nextPhotos);
-    if (photos.length === 0) {
-      collectLocation();
-    }
-  };
+  const uploadSingleFile = useCallback(
+    async (file: File, localId: string): Promise<void> => {
+      try {
+        const result = await upload.mutateAsync(file);
+        setPhotos((current) => {
+          const next = current.map((photo) =>
+            photo.localId === localId
+              ? { ...photo, uploadId: result.id, status: "done" as const }
+              : photo,
+          );
+          setValue(
+            "uploadIds",
+            next.filter((p) => p.uploadId).map((p) => p.uploadId as string),
+            { shouldValidate: true },
+          );
+          return next;
+        });
+      } catch {
+        setPhotos((current) =>
+          current.map((photo) =>
+            photo.localId === localId
+              ? {
+                  ...photo,
+                  status: "error" as const,
+                  errorMessage: "Não foi possível enviar.",
+                }
+              : photo,
+          ),
+        );
+      }
+    },
+    [setValue, upload],
+  );
+
+  const addFiles = useCallback(
+    (files: File[]): void => {
+      setPhotos((current) => {
+        const remaining = 10 - current.length;
+        const batch = files.slice(0, remaining);
+        if (batch.length === 0) {
+          return current;
+        }
+
+        const optimistic: PhotoDraftItem[] = batch.map((file) => ({
+          localId: createLocalId(),
+          preview: URL.createObjectURL(file),
+          uploadId: null,
+          status: "uploading",
+        }));
+
+        const nextPhotos = [...current, ...optimistic];
+
+        batch.forEach((file, index) => {
+          const draft = optimistic[index];
+          if (draft) {
+            void uploadSingleFile(file, draft.localId);
+          }
+        });
+
+        if (current.length === 0) {
+          requestLocation();
+        }
+
+        setValue(
+          "uploadIds",
+          nextPhotos.filter((p) => p.uploadId).map((p) => p.uploadId as string),
+          { shouldValidate: true },
+        );
+
+        return nextPhotos;
+      });
+    },
+    [requestLocation, setValue, uploadSingleFile],
+  );
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const fileList = event.target.files;
@@ -143,93 +196,39 @@ export function NewSightingForm({
     if (!fileList || fileList.length === 0) {
       return;
     }
-    void uploadFiles(Array.from(fileList));
+    addFiles(Array.from(fileList));
   };
 
-  const removePhoto = (uploadId: string): void => {
-    syncUploadIds(photos.filter((photo) => photo.uploadId !== uploadId));
+  const removePhoto = (localId: string): void => {
+    setPhotos((current) => {
+      const next = current.filter((photo) => photo.localId !== localId);
+      setValue(
+        "uploadIds",
+        next.filter((p) => p.uploadId).map((p) => p.uploadId as string),
+        { shouldValidate: true },
+      );
+      return next;
+    });
+  };
+
+  const handleReorder = (fromIndex: number, toIndex: number): void => {
+    setPhotos((current) => {
+      const next = reorderPhotos(current, fromIndex, toIndex);
+      setValue(
+        "uploadIds",
+        next.filter((p) => p.uploadId).map((p) => p.uploadId as string),
+        { shouldValidate: true },
+      );
+      return next;
+    });
   };
 
   useEffect(() => {
-    if (autoCapture && !autoCaptureTriggered.current && step === "photo") {
+    if (autoCapture && !autoCaptureTriggered.current && !hasPhotos) {
       autoCaptureTriggered.current = true;
       cameraInputRef.current?.click();
     }
-  }, [autoCapture, step]);
-
-  if (step === "photo") {
-    return (
-      <div className={styles.root}>
-        <div className={styles.photoBox}>
-          {coverPreview ? (
-            <Image src={coverPreview} alt="Pré-visualização" fill className="object-cover" />
-          ) : upload.isPending ? (
-            <Spinner size="md" />
-          ) : (
-            <div className="flex flex-col items-center gap-3 p-4 text-center">
-              <Icon name="camera" size="lg" />
-              <p className="text-sm text-fg-secondary">Registre o flagrado com até 10 fotos</p>
-            </div>
-          )}
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            capture="environment"
-            className="sr-only"
-            onChange={handlePhotoChange}
-          />
-          <input
-            ref={galleryInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            className="sr-only"
-            onChange={handlePhotoChange}
-          />
-        </div>
-        {photos.length > 0 ? (
-          <p className={styles.hint}>{photos.length} foto(s) selecionada(s)</p>
-        ) : null}
-        {upload.error ? <p className={styles.error}>Não foi possível enviar a foto.</p> : null}
-        <div className="flex flex-col gap-2">
-          <Button
-            fullWidth
-            leadingIcon={<Icon name="camera" />}
-            disabled={upload.isPending || photos.length >= 10}
-            onClick={() => cameraInputRef.current?.click()}
-          >
-            Abrir câmera
-          </Button>
-          <Button
-            variant="secondary"
-            fullWidth
-            disabled={upload.isPending || photos.length >= 10}
-            onClick={() => galleryInputRef.current?.click()}
-          >
-            Escolher da galeria
-          </Button>
-          {photos.length > 0 ? (
-            <Button fullWidth onClick={() => setStep("form")}>
-              Continuar
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
-  if (step === "locating") {
-    return (
-      <div className={styles.root}>
-        <StatePanel
-          kind="loading"
-          title="Obtendo localização…"
-          description="Aguarde um instante."
-        />
-      </div>
-    );
-  }
+  }, [autoCapture, hasPhotos]);
 
   return (
     <>
@@ -247,53 +246,94 @@ export function NewSightingForm({
           }),
         )}
       >
-        <div className="grid grid-cols-3 gap-2">
-          {photos.map((photo) => (
-            <div key={photo.uploadId} className="relative aspect-square overflow-hidden rounded-md">
-              <Image src={photo.preview} alt="Foto do flagrado" fill className="object-cover" />
-              <button
-                type="button"
-                aria-label="Remover foto"
-                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white"
-                onClick={() => removePhoto(photo.uploadId)}
-              >
-                <Icon name="x" size="sm" />
-              </button>
+        {!hasPhotos ? (
+          <div className="flex flex-col gap-2">
+            <div className={styles.photoBox}>
+              <div className="flex flex-col items-center gap-3 p-4 text-center">
+                <Icon name="camera" size="lg" />
+                <p className="text-sm text-fg-secondary">Registre o flagrado com até 10 fotos</p>
+              </div>
             </div>
-          ))}
-        </div>
-        {photos.length < 10 ? (
-          <>
             <input
-              ref={addMoreInputRef}
+              ref={cameraInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,image/*"
+              capture="environment"
+              className="sr-only"
+              onChange={handlePhotoChange}
+            />
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/*"
               multiple
               className="sr-only"
               onChange={handlePhotoChange}
             />
             <Button
               type="button"
+              fullWidth
+              leadingIcon={<Icon name="camera" />}
+              onClick={() => cameraInputRef.current?.click()}
+            >
+              Abrir câmera
+            </Button>
+            <Button
+              type="button"
               variant="secondary"
               fullWidth
-              disabled={upload.isPending}
-              onClick={() => addMoreInputRef.current?.click()}
+              onClick={() => galleryInputRef.current?.click()}
             >
-              Adicionar fotos
+              Escolher da galeria
             </Button>
+          </div>
+        ) : (
+          <>
+            <SortablePhotoGrid photos={photos} onReorder={handleReorder} onRemove={removePhoto} />
+            {photos.length > 1 ? (
+              <p className={styles.hint}>Arraste para reordenar. A primeira foto é a capa.</p>
+            ) : null}
+            {photos.length < 10 ? (
+              <>
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/*"
+                  multiple
+                  className="sr-only"
+                  onChange={handlePhotoChange}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  fullWidth
+                  disabled={anyUploading}
+                  onClick={() => galleryInputRef.current?.click()}
+                >
+                  Adicionar fotos
+                </Button>
+              </>
+            ) : null}
+            {anyUploading ? (
+              <p className={styles.hint}>
+                Enviando fotos… você já pode preencher os campos abaixo.
+              </p>
+            ) : null}
           </>
-        ) : null}
+        )}
 
         <FormField
           label="Título"
           placeholder="Flagrado no encontro noturno"
           errorMessage={errors.title?.message}
+          disabled={!hasPhotos}
           {...register("title")}
         />
         <FormField
           label="Descrição (opcional)"
           placeholder="Vista incrível com tanto carro novo."
           errorMessage={errors.description?.message}
+          disabled={!hasPhotos}
           {...register("description")}
         />
 
@@ -303,15 +343,18 @@ export function NewSightingForm({
           <p className="pb-2 text-xs uppercase tracking-wider text-fg-muted">Localização</p>
           <button
             type="button"
+            disabled={!hasPhotos}
             onClick={() => setPickerOpen(true)}
-            className="flex w-full items-center justify-between gap-3 rounded-md border border-border-default bg-bg-elevated px-4 py-3 text-left transition-colors hover:border-border-strong"
+            className="flex w-full items-center justify-between gap-3 rounded-md border border-border-default bg-bg-elevated px-4 py-3 text-left transition-colors hover:border-border-strong disabled:opacity-50"
           >
             <span className="flex min-w-0 items-center gap-2 text-sm text-fg-primary">
               <Icon name="map" size="sm" />
               <span className="truncate">
-                {hasLocation
-                  ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
-                  : "Escolher no mapa"}
+                {locating
+                  ? "Obtendo localização…"
+                  : hasLocation
+                    ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
+                    : "Escolher no mapa"}
               </span>
             </span>
             <Icon name="chevron-right" size="sm" />
@@ -321,7 +364,9 @@ export function NewSightingForm({
               O nome da rua será obtido automaticamente ao publicar.
             </p>
           ) : null}
-          {geoError && !hasLocation ? <p className={`mt-1 ${styles.hint}`}>{geoError}</p> : null}
+          {geoError && !hasLocation && !locating ? (
+            <p className={`mt-1 ${styles.hint}`}>{geoError}</p>
+          ) : null}
           {errors.latitude || errors.longitude ? (
             <p className={`mt-1 ${styles.hint}`}>Selecione um local válido.</p>
           ) : null}
@@ -331,6 +376,7 @@ export function NewSightingForm({
           label="Data e hora"
           type="datetime-local"
           errorMessage={errors.occurredAt?.message}
+          disabled={!hasPhotos}
           {...register("occurredAt")}
         />
 
@@ -340,7 +386,7 @@ export function NewSightingForm({
           type="submit"
           fullWidth
           isLoading={isSubmitting}
-          disabled={uploadIds.length === 0 || !hasLocation}
+          disabled={!hasPhotos || !allUploaded || !hasLocation || uploadIds.length === 0}
         >
           Publicar flagrado
         </Button>

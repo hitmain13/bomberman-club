@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useUploadImage } from "@/shared/hooks/use-upload-image";
 import { apiClient } from "@/shared/lib/api-client";
 import { queryKeys } from "@/shared/lib/query-keys";
-import { compressImage } from "@/shared/utils/compress-image";
 
 export { useUploadImage };
 
@@ -17,8 +16,7 @@ export function useUploadImages() {
     mutationFn: async (files: File[]) => {
       const ids: string[] = [];
       for (const file of files) {
-        const { file: compressed } = await compressImage(file);
-        const result = await upload.mutateAsync(compressed);
+        const result = await upload.mutateAsync(file);
         ids.push(result.id);
       }
       return ids;
