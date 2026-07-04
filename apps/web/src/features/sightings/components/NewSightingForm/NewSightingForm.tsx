@@ -9,7 +9,7 @@ import { Button } from "@/components/atoms/Button";
 import { buttonBase, buttonSizes, buttonVariants } from "@/components/atoms/Button/Button.styles";
 import { Icon } from "@/components/atoms/Icon";
 import { FormField } from "@/components/molecules/FormField";
-import { useUploadImage } from "@/shared/hooks/use-upload-image";
+import { uploadImageFile } from "@/shared/hooks/use-upload-image";
 import { cn } from "@/shared/utils/cn";
 
 import { type NewSightingPayload, type NewSightingValues, newSightingSchema } from "../../schemas";
@@ -43,11 +43,11 @@ export function NewSightingForm({
   errorMessage = null,
   autoCapture = false,
 }: NewSightingFormProps): JSX.Element {
-  const upload = useUploadImage();
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const autoCaptureTriggered = useRef(false);
   const geolocationRequested = useRef(false);
+  const uploadChainRef = useRef(Promise.resolve());
   const [photos, setPhotos] = useState<PhotoDraftItem[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -128,34 +128,37 @@ export function NewSightingForm({
     [setValue],
   );
 
-  const uploadSingleFile = useCallback(
-    async (file: File, localId: string): Promise<void> => {
-      try {
-        const result = await upload.mutateAsync(file);
-        setPhotos((current) => {
-          const next = current.map((photo) =>
-            photo.localId === localId
-              ? { ...photo, uploadId: result.id, status: "done" as const }
-              : photo,
+  const enqueueUpload = useCallback(
+    (file: File, localId: string): void => {
+      uploadChainRef.current = uploadChainRef.current
+        .catch(() => undefined)
+        .then(() => uploadImageFile(file))
+        .then((result) => {
+          setPhotos((current) => {
+            const next = current.map((photo) =>
+              photo.localId === localId
+                ? { ...photo, uploadId: result.id, status: "done" as const }
+                : photo,
+            );
+            syncUploadIds(next);
+            return next;
+          });
+        })
+        .catch(() => {
+          setPhotos((current) =>
+            current.map((photo) =>
+              photo.localId === localId
+                ? {
+                    ...photo,
+                    status: "error" as const,
+                    errorMessage: "Não foi possível enviar.",
+                  }
+                : photo,
+            ),
           );
-          syncUploadIds(next);
-          return next;
         });
-      } catch {
-        setPhotos((current) =>
-          current.map((photo) =>
-            photo.localId === localId
-              ? {
-                  ...photo,
-                  status: "error" as const,
-                  errorMessage: "Não foi possível enviar.",
-                }
-              : photo,
-          ),
-        );
-      }
     },
-    [syncUploadIds, upload],
+    [syncUploadIds],
   );
 
   const addFiles = useCallback(
@@ -193,11 +196,11 @@ export function NewSightingForm({
       batch.forEach((file, index) => {
         const draft = optimistic[index];
         if (draft) {
-          void uploadSingleFile(file, draft.localId);
+          enqueueUpload(file, draft.localId);
         }
       });
     },
-    [requestLocation, uploadSingleFile],
+    [enqueueUpload, requestLocation],
   );
 
   const handlePhotoInput = (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -309,7 +312,6 @@ export function NewSightingForm({
                   buttonVariants.secondary,
                   buttonSizes.md,
                   "relative w-full cursor-pointer",
-                  anyUploading && "pointer-events-none opacity-50",
                 )}
               >
                 <span>Adicionar fotos</span>
@@ -320,7 +322,6 @@ export function NewSightingForm({
                   multiple
                   aria-label="Adicionar fotos"
                   className={styles.photoInput}
-                  disabled={anyUploading}
                   onChange={handlePhotoInput}
                 />
               </label>

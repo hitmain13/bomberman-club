@@ -4,19 +4,18 @@ import type { SightingInput, SightingUpdateInput } from "@bomberman/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-import { useUploadImage } from "@/shared/hooks/use-upload-image";
+import { uploadImageFile, useUploadImage } from "@/shared/hooks/use-upload-image";
 import { apiClient } from "@/shared/lib/api-client";
 import { queryKeys } from "@/shared/lib/query-keys";
 
 export { useUploadImage };
 
 export function useUploadImages() {
-  const upload = useUploadImage();
   return useMutation({
     mutationFn: async (files: File[]) => {
       const ids: string[] = [];
       for (const file of files) {
-        const result = await upload.mutateAsync(file);
+        const result = await uploadImageFile(file);
         ids.push(result.id);
       }
       return ids;
