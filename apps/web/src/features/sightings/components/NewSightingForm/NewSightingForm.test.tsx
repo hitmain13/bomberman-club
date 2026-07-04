@@ -13,8 +13,8 @@ function withClient(node: ReactNode): JSX.Element {
 describe("NewSightingForm", () => {
   it("shows capture actions and form fields on the same screen", () => {
     render(withClient(<NewSightingForm onSubmit={vi.fn()} />));
-    expect(screen.getByRole("button", { name: "Abrir câmera" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Escolher da galeria" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Abrir câmera")).toBeInTheDocument();
+    expect(screen.getByLabelText("Escolher da galeria")).toBeInTheDocument();
     expect(screen.getByLabelText("Título")).toBeDisabled();
     expect(screen.getByRole("button", { name: "Publicar flagrado" })).toBeDisabled();
   });

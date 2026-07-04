@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useRef } from "react";
 
 import { Icon } from "@/components/atoms/Icon";
@@ -55,7 +54,8 @@ export function SortablePhotoGrid({
             index === 0 && "ring-2 ring-accent-primary ring-offset-2 ring-offset-bg-base",
           )}
         >
-          <Image src={photo.preview} alt="Foto do flagrado" fill className="object-cover" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- blob: preview URLs are not supported by next/image */}
+          <img src={photo.preview} alt="Foto do flagrado" className="h-full w-full object-cover" />
           {photo.status === "uploading" ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 text-white">
               <Spinner size="sm" />

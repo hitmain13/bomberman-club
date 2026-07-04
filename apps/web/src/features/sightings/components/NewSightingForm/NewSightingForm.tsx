@@ -6,9 +6,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/atoms/Button";
+import { buttonBase, buttonSizes, buttonVariants } from "@/components/atoms/Button/Button.styles";
 import { Icon } from "@/components/atoms/Icon";
 import { FormField } from "@/components/molecules/FormField";
 import { useUploadImage } from "@/shared/hooks/use-upload-image";
+import { cn } from "@/shared/utils/cn";
 
 import { type NewSightingPayload, type NewSightingValues, newSightingSchema } from "../../schemas";
 import { type PhotoDraftItem, SortablePhotoGrid } from "../SortablePhotoGrid/SortablePhotoGrid";
@@ -115,6 +117,17 @@ export function NewSightingForm({
     );
   }, [applyLocation]);
 
+  const syncUploadIds = useCallback(
+    (nextPhotos: PhotoDraftItem[]): void => {
+      setValue(
+        "uploadIds",
+        nextPhotos.filter((photo) => photo.uploadId).map((photo) => photo.uploadId as string),
+        { shouldValidate: true },
+      );
+    },
+    [setValue],
+  );
+
   const uploadSingleFile = useCallback(
     async (file: File, localId: string): Promise<void> => {
       try {
@@ -125,11 +138,7 @@ export function NewSightingForm({
               ? { ...photo, uploadId: result.id, status: "done" as const }
               : photo,
           );
-          setValue(
-            "uploadIds",
-            next.filter((p) => p.uploadId).map((p) => p.uploadId as string),
-            { shouldValidate: true },
-          );
+          syncUploadIds(next);
           return next;
         });
       } catch {
@@ -146,67 +155,64 @@ export function NewSightingForm({
         );
       }
     },
-    [setValue, upload],
+    [syncUploadIds, upload],
   );
 
   const addFiles = useCallback(
     (files: File[]): void => {
+      let batch: File[] = [];
+      let optimistic: PhotoDraftItem[] = [];
+      let shouldRequestLocation = false;
+
       setPhotos((current) => {
         const remaining = 10 - current.length;
-        const batch = files.slice(0, remaining);
+        batch = files.slice(0, remaining);
         if (batch.length === 0) {
           return current;
         }
 
-        const optimistic: PhotoDraftItem[] = batch.map((file) => ({
+        shouldRequestLocation = current.length === 0;
+        optimistic = batch.map((file) => ({
           localId: createLocalId(),
           preview: URL.createObjectURL(file),
           uploadId: null,
-          status: "uploading",
+          status: "uploading" as const,
         }));
 
-        const nextPhotos = [...current, ...optimistic];
+        return [...current, ...optimistic];
+      });
 
-        batch.forEach((file, index) => {
-          const draft = optimistic[index];
-          if (draft) {
-            void uploadSingleFile(file, draft.localId);
-          }
-        });
+      if (batch.length === 0) {
+        return;
+      }
 
-        if (current.length === 0) {
-          requestLocation();
+      if (shouldRequestLocation) {
+        requestLocation();
+      }
+
+      batch.forEach((file, index) => {
+        const draft = optimistic[index];
+        if (draft) {
+          void uploadSingleFile(file, draft.localId);
         }
-
-        setValue(
-          "uploadIds",
-          nextPhotos.filter((p) => p.uploadId).map((p) => p.uploadId as string),
-          { shouldValidate: true },
-        );
-
-        return nextPhotos;
       });
     },
-    [requestLocation, setValue, uploadSingleFile],
+    [requestLocation, uploadSingleFile],
   );
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    const fileList = event.target.files;
-    event.target.value = "";
-    if (!fileList || fileList.length === 0) {
+  const handlePhotoInput = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    if (files.length === 0) {
       return;
     }
-    addFiles(Array.from(fileList));
+    addFiles(files);
+    event.target.value = "";
   };
 
   const removePhoto = (localId: string): void => {
     setPhotos((current) => {
       const next = current.filter((photo) => photo.localId !== localId);
-      setValue(
-        "uploadIds",
-        next.filter((p) => p.uploadId).map((p) => p.uploadId as string),
-        { shouldValidate: true },
-      );
+      syncUploadIds(next);
       return next;
     });
   };
@@ -214,11 +220,7 @@ export function NewSightingForm({
   const handleReorder = (fromIndex: number, toIndex: number): void => {
     setPhotos((current) => {
       const next = reorderPhotos(current, fromIndex, toIndex);
-      setValue(
-        "uploadIds",
-        next.filter((p) => p.uploadId).map((p) => p.uploadId as string),
-        { shouldValidate: true },
-      );
+      syncUploadIds(next);
       return next;
     });
   };
@@ -254,38 +256,45 @@ export function NewSightingForm({
                 <p className="text-sm text-fg-secondary">Registre o flagrado com até 10 fotos</p>
               </div>
             </div>
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/*"
-              capture="environment"
-              className="sr-only"
-              onChange={handlePhotoChange}
-            />
-            <input
-              ref={galleryInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/*"
-              multiple
-              className="sr-only"
-              onChange={handlePhotoChange}
-            />
-            <Button
-              type="button"
-              fullWidth
-              leadingIcon={<Icon name="camera" />}
-              onClick={() => cameraInputRef.current?.click()}
+            <label
+              className={cn(
+                buttonBase,
+                buttonVariants.primary,
+                buttonSizes.md,
+                "relative w-full cursor-pointer",
+              )}
             >
-              Abrir câmera
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              fullWidth
-              onClick={() => galleryInputRef.current?.click()}
+              <Icon name="camera" />
+              <span>Abrir câmera</span>
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/*"
+                capture="environment"
+                aria-label="Abrir câmera"
+                className={styles.photoInput}
+                onChange={handlePhotoInput}
+              />
+            </label>
+            <label
+              className={cn(
+                buttonBase,
+                buttonVariants.secondary,
+                buttonSizes.md,
+                "relative w-full cursor-pointer",
+              )}
             >
-              Escolher da galeria
-            </Button>
+              <span>Escolher da galeria</span>
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/*"
+                multiple
+                aria-label="Escolher da galeria"
+                className={styles.photoInput}
+                onChange={handlePhotoInput}
+              />
+            </label>
           </div>
         ) : (
           <>
@@ -294,25 +303,27 @@ export function NewSightingForm({
               <p className={styles.hint}>Arraste para reordenar. A primeira foto é a capa.</p>
             ) : null}
             {photos.length < 10 ? (
-              <>
+              <label
+                className={cn(
+                  buttonBase,
+                  buttonVariants.secondary,
+                  buttonSizes.md,
+                  "relative w-full cursor-pointer",
+                  anyUploading && "pointer-events-none opacity-50",
+                )}
+              >
+                <span>Adicionar fotos</span>
                 <input
                   ref={galleryInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp,image/*"
                   multiple
-                  className="sr-only"
-                  onChange={handlePhotoChange}
-                />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  fullWidth
+                  aria-label="Adicionar fotos"
+                  className={styles.photoInput}
                   disabled={anyUploading}
-                  onClick={() => galleryInputRef.current?.click()}
-                >
-                  Adicionar fotos
-                </Button>
-              </>
+                  onChange={handlePhotoInput}
+                />
+              </label>
             ) : null}
             {anyUploading ? (
               <p className={styles.hint}>
