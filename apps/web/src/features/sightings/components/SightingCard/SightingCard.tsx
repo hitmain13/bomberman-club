@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Avatar } from "@/components/atoms/Avatar";
+import { Icon } from "@/components/atoms/Icon";
 import { cn } from "@/shared/utils/cn";
 
 import { formatRelative } from "../../utils/format-date";
@@ -11,6 +12,9 @@ import type { SightingCardProps } from "./SightingCard.types";
 
 export function SightingCard({ sighting, href, className }: SightingCardProps): JSX.Element {
   const target = href ?? `/sightings/${sighting.id}`;
+  const locationText =
+    sighting.locationLabel ?? `${sighting.latitude.toFixed(5)}, ${sighting.longitude.toFixed(5)}`;
+
   return (
     <Link href={target} className={cn(styles.root, className)} aria-label={sighting.title}>
       <div className={styles.cover}>
@@ -37,6 +41,10 @@ export function SightingCard({ sighting, href, className }: SightingCardProps): 
         </header>
         <h3 className={styles.title}>{sighting.title}</h3>
         {sighting.description ? <p className={styles.description}>{sighting.description}</p> : null}
+        <p className={styles.location}>
+          <Icon name="map" size="sm" className={styles.locationIcon} />
+          <span className="truncate">{locationText}</span>
+        </p>
       </div>
     </Link>
   );

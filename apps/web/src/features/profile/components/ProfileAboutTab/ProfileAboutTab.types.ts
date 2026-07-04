@@ -2,7 +2,7 @@ export interface ProfileAboutTabProps {
   bio: string | null;
   city: string | null;
   memberSince: string;
-  carsCount: number;
-  sightingsCount: number;
+  carsCount?: number | undefined;
+  sightingsCount?: number | undefined;
   className?: string;
 }

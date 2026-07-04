@@ -4,4 +4,5 @@ export interface NewSightingFormProps {
   onSubmit: (input: SightingInput) => void;
   isSubmitting?: boolean;
   errorMessage?: string | null;
+  autoCapture?: boolean;
 }

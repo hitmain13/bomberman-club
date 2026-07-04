@@ -135,6 +135,7 @@ export function LocationPicker({
       open={open}
       title="Escolher local"
       onClose={onCancel}
+      constrained
       footer={
         <>
           <Button

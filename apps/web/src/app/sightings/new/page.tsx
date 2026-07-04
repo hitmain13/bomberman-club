@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 import { Button } from "@/components/atoms/Button";
 import { Icon } from "@/components/atoms/Icon";
@@ -10,9 +12,12 @@ import { NewSightingForm, useCreateSighting } from "@/features/sightings";
 import { RequireAuth } from "@/shared/contexts/require-auth";
 
 function Content(): JSX.Element {
+  const searchParams = useSearchParams();
+  const autoCapture = searchParams.get("capture") === "1";
   const mutation = useCreateSighting();
   return (
     <NewSightingForm
+      autoCapture={autoCapture}
       onSubmit={(input) => mutation.mutate(input)}
       isSubmitting={mutation.isPending}
       errorMessage={mutation.error ? getAuthErrorMessage(mutation.error) : null}
@@ -33,7 +38,9 @@ export default function NewSightingPage(): JSX.Element {
           <h1 className="text-base font-semibold">Novo flagrado</h1>
           <span aria-hidden="true" className="w-12" />
         </header>
-        <Content />
+        <Suspense fallback={null}>
+          <Content />
+        </Suspense>
       </RequireAuth>
     </AppShell>
   );

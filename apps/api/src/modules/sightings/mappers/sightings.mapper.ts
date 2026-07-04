@@ -17,6 +17,7 @@ export function toSightingResponse(sighting: SightingWithRelations): SightingRes
     description: sighting.description,
     latitude: sighting.latitude,
     longitude: sighting.longitude,
+    locationLabel: sighting.locationLabel,
     occurredAt: sighting.occurredAt.toISOString(),
     createdAt: sighting.createdAt.toISOString(),
   };

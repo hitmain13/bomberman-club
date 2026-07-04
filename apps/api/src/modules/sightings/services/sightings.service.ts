@@ -54,6 +54,7 @@ export class SightingsService {
       description: input.description ?? null,
       latitude: input.latitude,
       longitude: input.longitude,
+      locationLabel: input.locationLabel ?? null,
       occurredAt: new Date(input.occurredAt),
     });
     return toSightingResponse(created);

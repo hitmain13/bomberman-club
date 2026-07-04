@@ -17,6 +17,7 @@ export const newSightingSchema = sightingInputSchema
   .omit({ uploadId: true, occurredAt: true })
   .extend({
     uploadId: z.string().min(1, "Envie uma foto antes de publicar."),
+    locationLabel: z.string().max(200).nullable().optional(),
     occurredAt: localDatetimeSchema,
   });
 

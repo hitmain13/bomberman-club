@@ -11,6 +11,7 @@ export const sightingInputSchema = z.object({
   description: z.string().max(500).nullable().optional(),
   latitude: latitudeSchema,
   longitude: longitudeSchema,
+  locationLabel: z.string().max(200).nullable().optional(),
   occurredAt: z.string().datetime(),
 });
 
@@ -30,6 +31,7 @@ export const sightingResponseSchema = z.object({
   description: z.string().nullable(),
   latitude: latitudeSchema,
   longitude: longitudeSchema,
+  locationLabel: z.string().nullable(),
   occurredAt: z.string().datetime(),
   createdAt: z.string().datetime(),
 });

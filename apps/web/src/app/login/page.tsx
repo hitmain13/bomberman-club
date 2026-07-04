@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { AuthLayout, LoginForm, SocialButtons } from "@/features/auth";
 
@@ -16,7 +17,9 @@ export default function LoginPage(): JSX.Element {
         </span>
       }
     >
-      <LoginForm />
+      <Suspense fallback={null}>
+        <LoginForm />
+      </Suspense>
       <SocialButtons />
     </AuthLayout>
   );

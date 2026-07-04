@@ -15,7 +15,9 @@ export function PersonListItem({ person, className }: PersonListItemProps): JSX.
       <Link href={`/u/${person.username}`} className={styles.identity}>
         <Avatar src={person.avatarUrl} alt={person.username} size="md" />
         <div className={styles.info}>
-          <span className={styles.username}>@{person.username}</span>
+          <span className={styles.username} title={`@${person.username}`}>
+            @{person.username}
+          </span>
           <span className={styles.city}>
             {person.city ?? "Localização não informada"}
             <span className={styles.metaDivider}> · </span>

@@ -10,10 +10,11 @@ import { styles } from "./BottomNav.styles";
 import type { BottomNavProps } from "./BottomNav.types";
 
 function isActive(href: string, pathname: string): boolean {
-  if (href === "/") {
+  const path = href.split("?")[0] ?? href;
+  if (path === "/") {
     return pathname === "/";
   }
-  return pathname === href || pathname.startsWith(`${href}/`);
+  return pathname === path || pathname.startsWith(`${path}/`);
 }
 
 export function BottomNav({ items }: BottomNavProps): JSX.Element {

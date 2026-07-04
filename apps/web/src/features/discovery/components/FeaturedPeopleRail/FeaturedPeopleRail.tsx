@@ -13,9 +13,14 @@ export function FeaturedPeopleRail({ people, className }: FeaturedPeopleRailProp
       <ul className={styles.rail}>
         {people.map((person) => (
           <li key={person.id} className={styles.item}>
-            <Link href={`/u/${person.username}`} className="flex flex-col items-center gap-2">
+            <Link
+              href={`/u/${person.username}`}
+              className="flex w-full flex-col items-center gap-2 overflow-hidden"
+            >
               <Avatar src={person.avatarUrl} alt={person.username} size="lg" />
-              <span className={styles.username}>@{person.username}</span>
+              <span className={styles.username} title={`@${person.username}`}>
+                @{person.username}
+              </span>
               {person.city ? <span className={styles.city}>{person.city}</span> : null}
             </Link>
           </li>

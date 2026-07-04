@@ -1,4 +1,4 @@
-import { styles } from "./BottomSheet.styles";
+import { sheetClassName, styles } from "./BottomSheet.styles";
 import type { BottomSheetProps } from "./BottomSheet.types";
 
 export function BottomSheet({
@@ -8,6 +8,7 @@ export function BottomSheet({
   children,
   footer,
   closeLabel = "Cancelar",
+  constrained = false,
 }: BottomSheetProps): JSX.Element | null {
   if (!open) {
     return null;
@@ -25,7 +26,7 @@ export function BottomSheet({
         }}
         role="presentation"
       />
-      <dialog open className={styles.sheet} aria-modal="true" aria-label={title}>
+      <dialog open className={sheetClassName(constrained)} aria-modal="true" aria-label={title}>
         <header className={styles.header}>
           <h2 className={styles.title}>{title}</h2>
           <button type="button" className={styles.close} onClick={onClose}>

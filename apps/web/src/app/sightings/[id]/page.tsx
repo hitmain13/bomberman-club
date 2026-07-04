@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { use } from "react";
@@ -13,6 +14,14 @@ import { formatDateTime, useDeleteSighting, useSighting } from "@/features/sight
 import { CommentsThread, LikeButton } from "@/features/social";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
+
+const SightingMiniMap = dynamic(
+  () =>
+    import("@/features/sightings/components/SightingMiniMap/SightingMiniMap").then((module) => ({
+      default: module.SightingMiniMap,
+    })),
+  { ssr: false, loading: () => <div className="h-40 animate-pulse rounded-lg bg-bg-elevated" /> },
+);
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -31,6 +40,8 @@ function Content({ id }: { id: string }): JSX.Element {
   }
 
   const isOwner = user?.id === data.userId;
+  const locationText =
+    data.locationLabel ?? `${data.latitude.toFixed(5)}, ${data.longitude.toFixed(5)}`;
 
   return (
     <article className="flex flex-col gap-4">
@@ -48,9 +59,13 @@ function Content({ id }: { id: string }): JSX.Element {
       </header>
       <h1 className="text-xl font-bold tracking-tight">{data.title}</h1>
       {data.description ? <p className="text-sm text-fg-secondary">{data.description}</p> : null}
-      <p className="text-xs uppercase tracking-wider text-fg-muted">
-        Lat {data.latitude.toFixed(5)} · Lng {data.longitude.toFixed(5)}
-      </p>
+      <div className="flex flex-col gap-2">
+        <p className="flex items-center gap-2 text-sm text-fg-secondary">
+          <Icon name="map" size="sm" />
+          {locationText}
+        </p>
+        <SightingMiniMap latitude={data.latitude} longitude={data.longitude} />
+      </div>
       <div className="flex items-center gap-3">
         <LikeButton targetType="SIGHTING" targetId={data.id} />
       </div>

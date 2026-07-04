@@ -11,7 +11,7 @@ import {
   ProfileAboutTab,
   ProfileHeader,
   ProfileLikesTab,
-  ProfileStats,
+  ProfileStatsSection,
   type ProfileTab,
   ProfileTabs,
   useProfileStats,
@@ -89,8 +89,8 @@ function MyProfileContent(): JSX.Element {
           bio={user.bio}
           city={user.city}
           memberSince={user.createdAt}
-          carsCount={stats?.carsCount ?? 0}
-          sightingsCount={stats?.sightingsCount ?? 0}
+          carsCount={stats?.carsCount}
+          sightingsCount={stats?.sightingsCount}
         />
       ),
     },
@@ -142,14 +142,7 @@ function MyProfileContent(): JSX.Element {
           </div>
         }
       />
-      <ProfileStats
-        items={[
-          { label: "Carros", value: stats?.carsCount ?? 0 },
-          { label: "Flagrados", value: stats?.sightingsCount ?? 0 },
-          { label: "Seguidores", value: stats?.followersCount ?? 0 },
-          { label: "Seguindo", value: stats?.followingCount ?? 0 },
-        ]}
-      />
+      <ProfileStatsSection username={user.username} />
       <ProfileTabs tabs={tabs} />
     </>
   );

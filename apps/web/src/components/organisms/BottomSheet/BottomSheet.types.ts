@@ -7,4 +7,5 @@ export interface BottomSheetProps {
   children: ReactNode;
   footer?: ReactNode;
   closeLabel?: string;
+  constrained?: boolean;
 }

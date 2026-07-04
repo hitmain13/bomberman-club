@@ -1,6 +1,8 @@
 export { ProfileHeader } from "./components/ProfileHeader";
 export type { ProfileSummary } from "./components/ProfileHeader";
 export { ProfileStats } from "./components/ProfileStats";
+export { ProfileStatsSection } from "./components/ProfileStats/ProfileStatsSection";
+export { ProfileStatsSkeleton } from "./components/ProfileStats/ProfileStatsSkeleton";
 export { ProfileTabs } from "./components/ProfileTabs";
 export type { ProfileTab, ProfileTabId } from "./components/ProfileTabs";
 export { EditProfileForm } from "./components/EditProfileForm";

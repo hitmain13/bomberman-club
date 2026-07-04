@@ -66,6 +66,7 @@ export class SightingsRepository {
     description: string | null;
     latitude: number;
     longitude: number;
+    locationLabel: string | null;
     occurredAt: Date;
   }): Promise<SightingWithRelations> {
     return prisma.sighting.create({ data, include: includeRelations });

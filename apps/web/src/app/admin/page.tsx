@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -15,6 +16,8 @@ import {
   useDeleteUpload,
   useUnbanUser,
 } from "@/features/admin/hooks/use-admin";
+import { ProfileStatsSkeleton } from "@/features/profile";
+import { QueryBoundary } from "@/shared/components/QueryBoundary";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
 
@@ -27,129 +30,139 @@ function formatBytes(bytes: number): string {
 }
 
 function UploadsTab(): JSX.Element {
-  const { data, isLoading, error } = useAdminUploads();
+  const query = useAdminUploads();
   const deleteUpload = useDeleteUpload();
 
-  if (isLoading) return <StatePanel kind="loading" />;
-  if (error) return <StatePanel kind="error" description="Erro ao carregar uploads." />;
-  if (!data?.data.length)
-    return <StatePanel kind="empty" description="Nenhum upload encontrado." />;
-
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-fg-muted">Total: {data.data.length} uploads</p>
-      <div className="grid gap-4">
-        {data.data.map((upload) => (
-          <div
-            key={upload.id}
-            className="flex items-center gap-4 rounded-lg border border-border-subtle bg-bg-surface p-3"
-          >
-            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-bg-elevated">
-              {upload.mime.startsWith("image/") ? (
-                <Image src={upload.url} alt="Preview" fill className="object-cover" sizes="64px" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                  <Icon name="camera" size="sm" />
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-fg-primary truncate">
-                {upload.owner.username}
-              </p>
-              <p className="text-xs text-fg-muted">{upload.owner.email}</p>
-              <p className="text-xs text-fg-muted">
-                {formatBytes(upload.size)} · {upload.mime} ·{" "}
-                {new Date(upload.createdAt).toLocaleDateString("pt-BR")}
-              </p>
-            </div>
-            <Button
-              variant="danger"
-              size="sm"
-              isLoading={deleteUpload.isPending}
-              onClick={() => {
-                if (window.confirm("Tem certeza que deseja remover este upload?")) {
-                  deleteUpload.mutate(upload.id);
-                }
-              }}
+    <QueryBoundary
+      query={query}
+      skeleton={<ProfileStatsSkeleton count={3} />}
+      errorDescription="Erro ao carregar uploads."
+      empty={<StatePanel kind="empty" description="Nenhum upload encontrado." />}
+    >
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-fg-muted">Total: {query.data?.data.length ?? 0} uploads</p>
+        <div className="grid gap-4">
+          {(query.data?.data ?? []).map((upload) => (
+            <div
+              key={upload.id}
+              className="flex items-center gap-4 rounded-lg border border-border-subtle bg-bg-surface p-3"
             >
-              Remover
-            </Button>
-          </div>
-        ))}
+              <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-bg-elevated">
+                {upload.mime.startsWith("image/") ? (
+                  <Image
+                    src={upload.url}
+                    alt="Preview"
+                    fill
+                    className="object-cover"
+                    sizes="64px"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <Icon name="camera" size="sm" />
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-fg-primary truncate">
+                  {upload.owner.username}
+                </p>
+                <p className="text-xs text-fg-muted">{upload.owner.email}</p>
+                <p className="text-xs text-fg-muted">
+                  {formatBytes(upload.size)} · {upload.mime} ·{" "}
+                  {new Date(upload.createdAt).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                isLoading={deleteUpload.isPending}
+                onClick={() => {
+                  if (window.confirm("Tem certeza que deseja remover este upload?")) {
+                    deleteUpload.mutate(upload.id);
+                  }
+                }}
+              >
+                Remover
+              </Button>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </QueryBoundary>
   );
 }
 
 function UsersTab(): JSX.Element {
-  const { data, isLoading, error } = useAdminUsers();
+  const query = useAdminUsers();
   const banUser = useBanUser();
   const unbanUser = useUnbanUser();
 
-  if (isLoading) return <StatePanel kind="loading" />;
-  if (error) return <StatePanel kind="error" description="Erro ao carregar usuários." />;
-  if (!data?.data.length)
-    return <StatePanel kind="empty" description="Nenhum usuário encontrado." />;
-
   return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-fg-muted">Total: {data.data.length} usuários</p>
-      <div className="grid gap-4">
-        {data.data.map((user) => (
-          <div
-            key={user.id}
-            className="flex items-center justify-between gap-4 rounded-lg border border-border-subtle bg-bg-surface p-3"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-fg-primary">@{user.username}</p>
-                {user.role === "ADMIN" && (
-                  <span className="rounded bg-accent-success/20 px-1.5 py-0.5 text-xs text-accent-success">
-                    Admin
-                  </span>
-                )}
-                {user.bannedAt && (
-                  <span className="rounded bg-accent-danger/20 px-1.5 py-0.5 text-xs text-accent-danger">
-                    Banido
-                  </span>
-                )}
+    <QueryBoundary
+      query={query}
+      skeleton={<ProfileStatsSkeleton count={3} />}
+      errorDescription="Erro ao carregar usuários."
+      empty={<StatePanel kind="empty" description="Nenhum usuário encontrado." />}
+    >
+      <div className="flex flex-col gap-4">
+        <p className="text-sm text-fg-muted">Total: {query.data?.data.length ?? 0} usuários</p>
+        <div className="grid gap-4">
+          {(query.data?.data ?? []).map((user) => (
+            <div
+              key={user.id}
+              className="flex items-center justify-between gap-4 rounded-lg border border-border-subtle bg-bg-surface p-3"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-fg-primary">@{user.username}</p>
+                  {user.role === "ADMIN" && (
+                    <span className="rounded bg-accent-success/20 px-1.5 py-0.5 text-xs text-accent-success">
+                      Admin
+                    </span>
+                  )}
+                  {user.bannedAt && (
+                    <span className="rounded bg-accent-danger/20 px-1.5 py-0.5 text-xs text-accent-danger">
+                      Banido
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-fg-muted">{user.email}</p>
+                <p className="text-xs text-fg-muted">
+                  Criado em {new Date(user.createdAt).toLocaleDateString("pt-BR")}
+                </p>
               </div>
-              <p className="text-xs text-fg-muted">{user.email}</p>
-              <p className="text-xs text-fg-muted">
-                Criado em {new Date(user.createdAt).toLocaleDateString("pt-BR")}
-              </p>
+              <div className="flex items-center gap-2">
+                {user.role !== "ADMIN" &&
+                  (user.bannedAt ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      isLoading={unbanUser.isPending}
+                      onClick={() => unbanUser.mutate(user.id)}
+                    >
+                      Desbanir
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      isLoading={banUser.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Banir @${user.username}?`)) {
+                          banUser.mutate(user.id);
+                        }
+                      }}
+                    >
+                      Banir
+                    </Button>
+                  ))}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {user.role !== "ADMIN" &&
-                (user.bannedAt ? (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    isLoading={unbanUser.isPending}
-                    onClick={() => unbanUser.mutate(user.id)}
-                  >
-                    Desbanir
-                  </Button>
-                ) : (
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    isLoading={banUser.isPending}
-                    onClick={() => {
-                      if (window.confirm(`Banir @${user.username}?`)) {
-                        banUser.mutate(user.id);
-                      }
-                    }}
-                  >
-                    Banir
-                  </Button>
-                ))}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+    </QueryBoundary>
   );
 }
 
@@ -173,9 +186,16 @@ function AdminContent(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-xl font-bold">Painel Administrativo</h1>
-        <p className="text-sm text-fg-muted">Gerencie uploads e usuários</p>
+      <header className="flex flex-col gap-3">
+        <div>
+          <h1 className="text-xl font-bold">Painel Administrativo</h1>
+          <p className="text-sm text-fg-muted">Gerencie uploads e usuários</p>
+        </div>
+        <Link href="/admin/catalog">
+          <Button variant="secondary" size="sm" leadingIcon={<Icon name="settings" />}>
+            Catálogo de peças e specs
+          </Button>
+        </Link>
       </header>
 
       <div className="flex gap-2 border-b border-border-subtle">

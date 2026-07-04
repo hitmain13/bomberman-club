@@ -40,11 +40,15 @@ export function ProfileAboutTab({
       <dl className={styles.list}>
         <div className={styles.row}>
           <dt className={styles.rowLabel}>Carros na garagem</dt>
-          <dd className={styles.rowValue}>{NUMBER_FORMAT.format(carsCount)}</dd>
+          <dd className={styles.rowValue}>
+            {carsCount === undefined ? "—" : NUMBER_FORMAT.format(carsCount)}
+          </dd>
         </div>
         <div className={styles.row}>
           <dt className={styles.rowLabel}>Flagrados publicados</dt>
-          <dd className={styles.rowValue}>{NUMBER_FORMAT.format(sightingsCount)}</dd>
+          <dd className={styles.rowValue}>
+            {sightingsCount === undefined ? "—" : NUMBER_FORMAT.format(sightingsCount)}
+          </dd>
         </div>
       </dl>
     </div>

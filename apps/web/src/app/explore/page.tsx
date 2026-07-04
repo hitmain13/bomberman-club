@@ -93,11 +93,13 @@ function SearchResults({ query, type }: { query: string; type: SearchType }): JS
               <li key={user.id}>
                 <Link
                   href={`/u/${user.username}`}
-                  className="flex items-center gap-3 rounded-md border border-border-subtle bg-bg-surface px-4 py-3"
+                  className="flex min-w-0 items-center gap-3 rounded-md border border-border-subtle bg-bg-surface px-4 py-3"
                 >
                   <Avatar src={user.avatarUrl} alt={user.username} size="sm" />
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-fg-primary">@{user.username}</span>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm font-semibold text-fg-primary">
+                      @{user.username}
+                    </span>
                     {user.city ? <span className="text-xs text-fg-muted">{user.city}</span> : null}
                   </div>
                 </Link>
