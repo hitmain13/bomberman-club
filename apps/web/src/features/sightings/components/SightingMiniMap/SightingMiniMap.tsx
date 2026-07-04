@@ -4,12 +4,15 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
 
+import { cn } from "@/shared/utils/cn";
+
 import { styles } from "./SightingMiniMap.styles";
 
 interface SightingMiniMapProps {
   latitude: number;
   longitude: number;
   className?: string;
+  interactive?: boolean;
 }
 
 const markerIcon = L.divIcon({
@@ -23,6 +26,7 @@ export function SightingMiniMap({
   latitude,
   longitude,
   className,
+  interactive = false,
 }: SightingMiniMapProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -35,11 +39,11 @@ export function SightingMiniMap({
       center: [latitude, longitude],
       zoom: 15,
       attributionControl: false,
-      dragging: false,
-      scrollWheelZoom: false,
-      doubleClickZoom: false,
-      touchZoom: false,
-      zoomControl: false,
+      dragging: interactive,
+      scrollWheelZoom: interactive,
+      doubleClickZoom: interactive,
+      touchZoom: interactive,
+      zoomControl: interactive,
     });
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
     L.marker([latitude, longitude], { icon: markerIcon }).addTo(map);
@@ -49,7 +53,13 @@ export function SightingMiniMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [latitude, longitude]);
+  }, [latitude, longitude, interactive]);
 
-  return <div ref={containerRef} className={className ?? styles.root} aria-hidden="true" />;
+  return (
+    <div
+      ref={containerRef}
+      className={cn(styles.root, className)}
+      aria-hidden={interactive ? undefined : true}
+    />
+  );
 }

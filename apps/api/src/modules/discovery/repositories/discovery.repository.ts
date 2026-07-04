@@ -18,6 +18,7 @@ export type CarWithOwner = Car & {
 const carWithCoverInclude = { cover: { select: { url: true } } } as const;
 const sightingWithRelationsInclude = {
   upload: true,
+  images: { include: { upload: true }, orderBy: { position: "asc" as const } },
   user: { include: { avatar: true } },
 } as const;
 const carWithOwnerInclude = {

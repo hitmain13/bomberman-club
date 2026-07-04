@@ -1,4 +1,4 @@
-import { sightingInputSchema } from "@bomberman/types";
+import { latitudeSchema, longitudeSchema } from "@bomberman/types";
 import { z } from "zod";
 
 const localDatetimeSchema = z
@@ -13,12 +13,14 @@ const localDatetimeSchema = z
     return parsed.toISOString();
   });
 
-export const newSightingSchema = sightingInputSchema
-  .omit({ uploadId: true, occurredAt: true })
-  .extend({
-    uploadId: z.string().min(1, "Envie uma foto antes de publicar."),
-    occurredAt: localDatetimeSchema,
-  });
+export const newSightingSchema = z.object({
+  uploadIds: z.array(z.string()).min(1, "Envie ao menos uma foto.").max(10),
+  title: z.string().min(3).max(80),
+  description: z.string().max(500).nullable().optional(),
+  latitude: latitudeSchema,
+  longitude: longitudeSchema,
+  occurredAt: localDatetimeSchema,
+});
 
 export type NewSightingValues = z.input<typeof newSightingSchema>;
 export type NewSightingPayload = z.output<typeof newSightingSchema>;

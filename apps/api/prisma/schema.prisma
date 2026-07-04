@@ -254,6 +254,7 @@ model Upload {
   carCover   Car?       @relation("CarCover")
   carImages  CarImage[] @relation("CarImageUpload")
   sighting   Sighting?  @relation("SightingPhoto")
+  sightingImages SightingImage[] @relation("SightingImageUpload")
 
   @@index([ownerId])
 }
@@ -278,9 +279,24 @@ model Sighting {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  images SightingImage[]
+
   @@index([userId])
   @@index([occurredAt])
   @@index([latitude, longitude])
+}
+
+model SightingImage {
+  id         String   @id @default(cuid())
+  sightingId String
+  sighting   Sighting @relation(fields: [sightingId], references: [id], onDelete: Cascade)
+  uploadId   String
+  upload     Upload   @relation("SightingImageUpload", fields: [uploadId], references: [id], onDelete: Restrict)
+  position   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@unique([sightingId, uploadId])
+  @@index([sightingId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -313,11 +329,15 @@ model Comment {
   targetType TargetType
   targetId   String
   content    String
+  parentId   String?
+  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentReplies")
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
   @@index([targetType, targetId])
   @@index([authorId])
+  @@index([parentId])
 }
 
 model Like {

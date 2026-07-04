@@ -33,6 +33,10 @@ export class CommentsRepository {
   remove(id: string): Promise<Comment> {
     return prisma.comment.delete({ where: { id } });
   }
+
+  countByTarget(targetType: TargetType, targetId: string): Promise<number> {
+    return prisma.comment.count({ where: { targetType, targetId, parentId: null } });
+  }
 }
 
 export const commentsRepository = new CommentsRepository();

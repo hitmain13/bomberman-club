@@ -57,6 +57,33 @@ const paths: Record<IconName, JSX.Element> = {
       <circle cx="12" cy="18" r="1.6" fill="currentColor" stroke="none" />
     </g>
   ),
+  "more-vertical": (
+    <g fill="currentColor" stroke="none">
+      <circle cx="12" cy="5" r="1.5" />
+      <circle cx="12" cy="12" r="1.5" />
+      <circle cx="12" cy="19" r="1.5" />
+    </g>
+  ),
+  edit: (
+    <g>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </g>
+  ),
+  trash: (
+    <g>
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M6 6l1 14h10l1-14" />
+    </g>
+  ),
+  share: (
+    <g>
+      <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+      <path d="M12 16V4" />
+      <path d="m8 8 4-4 4 4" />
+    </g>
+  ),
 };
 
 export function Icon({ name, size = "md", className, ...rest }: IconProps): JSX.Element {

@@ -6,6 +6,9 @@ export { useUserSightings } from "./hooks/use-user-sightings";
 export {
   useCreateSighting,
   useDeleteSighting,
+  useUpdateSighting,
   useUploadImage,
+  useUploadImages,
 } from "./hooks/use-sighting-mutations";
+export { SightingDetailView } from "./components/SightingDetailView/SightingDetailView";
 export * from "./utils/format-date";

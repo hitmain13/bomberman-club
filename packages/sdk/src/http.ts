@@ -6,6 +6,7 @@ export interface HttpClientOptions {
   baseUrl: string;
   getAccessToken?: () => string | null;
   onUnauthorized?: () => void;
+  refreshAccessToken?: () => Promise<string | null>;
   fetchImpl?: typeof fetch;
 }
 
@@ -17,6 +18,7 @@ interface RequestOptions<TResponseSchema extends z.ZodTypeAny> {
   responseSchema: TResponseSchema;
   signal?: AbortSignal;
   credentials?: RequestCredentials;
+  skipAuthRetry?: boolean;
 }
 
 const errorPayloadSchema = z.object({
@@ -31,12 +33,15 @@ export class HttpClient {
   public readonly baseUrl: string;
   private readonly getAccessToken: () => string | null;
   private readonly onUnauthorized: (() => void) | undefined;
+  private readonly refreshAccessToken: (() => Promise<string | null>) | undefined;
   private readonly fetchImpl: typeof fetch;
+  private refreshInFlight: Promise<string | null> | null = null;
 
   constructor(options: HttpClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.getAccessToken = options.getAccessToken ?? (() => null);
     this.onUnauthorized = options.onUnauthorized;
+    this.refreshAccessToken = options.refreshAccessToken;
     const provided = options.fetchImpl ?? globalThis.fetch;
     this.fetchImpl = provided.bind(globalThis);
   }
@@ -53,6 +58,43 @@ export class HttpClient {
   async request<TResponseSchema extends z.ZodTypeAny>(
     options: RequestOptions<TResponseSchema>,
   ): Promise<z.infer<TResponseSchema>> {
+    const response = await this.performRequest(options);
+
+    if (
+      response.status === 401 &&
+      !options.skipAuthRetry &&
+      this.refreshAccessToken &&
+      !options.path.startsWith("/auth/")
+    ) {
+      const refreshed = await this.tryRefreshAccessToken();
+      if (refreshed) {
+        return this.request({ ...options, skipAuthRetry: true });
+      }
+      this.onUnauthorized?.();
+    } else if (response.status === 401) {
+      this.onUnauthorized?.();
+    }
+
+    if (!response.ok) {
+      const rawError = (await safeJson(response)) as unknown;
+      const parsed = errorPayloadSchema.safeParse(rawError);
+      const payload: ApiErrorPayload = parsed.success
+        ? toErrorPayload(parsed.data.error)
+        : { code: "unknown_error", message: response.statusText };
+      throw new ApiError(response.status, payload);
+    }
+
+    if (response.status === 204) {
+      return options.responseSchema.parse(undefined);
+    }
+
+    const data = (await response.json()) as unknown;
+    return options.responseSchema.parse(data);
+  }
+
+  private async performRequest<TResponseSchema extends z.ZodTypeAny>(
+    options: RequestOptions<TResponseSchema>,
+  ): Promise<Response> {
     const url = this.buildUrl(options.path, options.query);
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     const token = this.getAccessToken();
@@ -72,27 +114,17 @@ export class HttpClient {
       init.signal = options.signal;
     }
 
-    const response = await this.fetchImpl(url, init);
+    return this.fetchImpl(url, init);
+  }
 
-    if (response.status === 401 && this.onUnauthorized) {
-      this.onUnauthorized();
+  private async tryRefreshAccessToken(): Promise<string | null> {
+    if (!this.refreshAccessToken) {
+      return null;
     }
-
-    if (!response.ok) {
-      const rawError = (await safeJson(response)) as unknown;
-      const parsed = errorPayloadSchema.safeParse(rawError);
-      const payload: ApiErrorPayload = parsed.success
-        ? toErrorPayload(parsed.data.error)
-        : { code: "unknown_error", message: response.statusText };
-      throw new ApiError(response.status, payload);
-    }
-
-    if (response.status === 204) {
-      return options.responseSchema.parse(undefined);
-    }
-
-    const data = (await response.json()) as unknown;
-    return options.responseSchema.parse(data);
+    this.refreshInFlight ??= this.refreshAccessToken().finally(() => {
+      this.refreshInFlight = null;
+    });
+    return this.refreshInFlight;
   }
 
   private buildUrl(path: string, query?: RequestOptions<z.ZodTypeAny>["query"]): string {

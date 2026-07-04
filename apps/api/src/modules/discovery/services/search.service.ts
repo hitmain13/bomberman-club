@@ -35,20 +35,22 @@ async function searchSightings(query: string): Promise<SearchResponse["sightings
     return [];
   }
   const sightings = await discoveryRepository.searchSightings(query, LIMIT);
-  return sightings.map(toSightingResponse);
+  return sightings.map((sighting) => toSightingResponse(sighting));
 }
 
 export class SearchService {
   async run(query: string, type: SearchType): Promise<SearchResponse> {
     const trimmed = query.trim();
-    if (type === "PEOPLE") {
-      return { people: await searchPeople(trimmed), cars: [], sightings: [] };
-    }
-    if (type === "CARS") {
-      return { people: [], cars: await searchCars(trimmed), sightings: [] };
-    }
+    if (type === "PEOPLE") return { people: await searchPeople(trimmed), cars: [], sightings: [] };
+
+    if (type === "CARS") return { people: [], cars: await searchCars(trimmed), sightings: [] };
+
     if (type === "SIGHTINGS") {
-      return { people: [], cars: [], sightings: await searchSightings(trimmed) };
+      return {
+        people: [],
+        cars: [],
+        sightings: await searchSightings(trimmed),
+      };
     }
     const [people, cars, sightings] = await Promise.all([
       searchPeople(trimmed),

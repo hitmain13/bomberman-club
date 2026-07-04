@@ -1,8 +1,10 @@
 import {
   type SightingInput,
   type SightingResponse,
+  type SightingUpdateInput,
   sightingInputSchema,
   sightingResponseSchema,
+  sightingUpdateSchema,
 } from "@bomberman/types";
 import type { SightingPeriod } from "@bomberman/types";
 import { z } from "zod";
@@ -57,6 +59,16 @@ export class SightingsResource {
     return this.http.request({
       method: "POST",
       path: "/sightings",
+      body,
+      responseSchema: sightingResponseSchema,
+    });
+  }
+
+  update(id: string, input: SightingUpdateInput): Promise<SightingResponse> {
+    const body = sightingUpdateSchema.parse(input);
+    return this.http.request({
+      method: "PATCH",
+      path: `/sightings/${encodeURIComponent(id)}`,
       body,
       responseSchema: sightingResponseSchema,
     });

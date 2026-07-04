@@ -1,14 +1,18 @@
-import type { Sighting, Upload, User } from "@prisma/client";
+import type { Sighting, SightingImage, Upload, User } from "@prisma/client";
 
 import { prisma } from "@/database/prisma";
 
+export type SightingImageWithUpload = SightingImage & { upload: Upload };
+
 export type SightingWithRelations = Sighting & {
   upload: Upload;
+  images: SightingImageWithUpload[];
   user: User & { avatar: Upload | null };
 };
 
 const includeRelations = {
   upload: true,
+  images: { include: { upload: true }, orderBy: { position: "asc" as const } },
   user: { include: { avatar: true } },
 } as const;
 
@@ -62,6 +66,7 @@ export class SightingsRepository {
   create(data: {
     userId: string;
     uploadId: string;
+    uploadIds: string[];
     title: string;
     description: string | null;
     latitude: number;
@@ -70,7 +75,62 @@ export class SightingsRepository {
     locationLabel: string | null;
     occurredAt: Date;
   }): Promise<SightingWithRelations> {
-    return prisma.sighting.create({ data, include: includeRelations });
+    return prisma.sighting.create({
+      data: {
+        userId: data.userId,
+        uploadId: data.uploadId,
+        title: data.title,
+        description: data.description,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        street: data.street,
+        locationLabel: data.locationLabel,
+        occurredAt: data.occurredAt,
+        images: {
+          create: data.uploadIds.map((uploadId, position) => ({ uploadId, position })),
+        },
+      },
+      include: includeRelations,
+    });
+  }
+
+  update(
+    id: string,
+    data: {
+      title?: string;
+      description?: string | null;
+      latitude?: number;
+      longitude?: number;
+      street?: string | null;
+      locationLabel?: string | null;
+      occurredAt?: Date;
+      uploadId?: string;
+      uploadIds?: string[];
+    },
+  ): Promise<SightingWithRelations> {
+    const imageUpdate =
+      data.uploadIds !== undefined
+        ? {
+            deleteMany: {},
+            create: data.uploadIds.map((uploadId, position) => ({ uploadId, position })),
+          }
+        : undefined;
+
+    return prisma.sighting.update({
+      where: { id },
+      data: {
+        ...(data.title !== undefined ? { title: data.title } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
+        ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
+        ...(data.street !== undefined ? { street: data.street } : {}),
+        ...(data.locationLabel !== undefined ? { locationLabel: data.locationLabel } : {}),
+        ...(data.occurredAt !== undefined ? { occurredAt: data.occurredAt } : {}),
+        ...(data.uploadId !== undefined ? { uploadId: data.uploadId } : {}),
+        ...(imageUpdate ? { images: imageUpdate } : {}),
+      },
+      include: includeRelations,
+    });
   }
 
   remove(id: string): Promise<Sighting> {

@@ -4,8 +4,12 @@ import type { PrivateUser } from "@bomberman/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
-import { apiClient } from "@/shared/lib/api-client";
-import { onUnauthorized, setAccessToken } from "@/shared/lib/api-client";
+import {
+  apiClient,
+  onUnauthorized,
+  setAccessToken,
+  setRefreshAccessToken,
+} from "@/shared/lib/api-client";
 import { queryKeys } from "@/shared/lib/query-keys";
 
 interface AuthContextValue {
@@ -43,6 +47,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
   useEffect(() => {
     let cancelled = false;
     onUnauthorized(() => clearSession());
+    setRefreshAccessToken(async () => {
+      try {
+        const session = await apiClient.auth.refresh();
+        if (cancelled) {
+          return null;
+        }
+        applySession(session);
+        return session.accessToken;
+      } catch {
+        return null;
+      }
+    });
     void (async () => {
       try {
         const session = await apiClient.auth.refresh();

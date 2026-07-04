@@ -8,6 +8,7 @@ import { SightingsService } from "./sightings.service";
 vi.mock("../repositories/sightings.repository", () => ({
   sightingsRepository: {
     create: vi.fn(),
+    update: vi.fn(),
     findById: vi.fn(),
     list: vi.fn(),
     listByUsername: vi.fn(),
@@ -44,7 +45,7 @@ describe("SightingsService.create", () => {
     vi.mocked(sightingsRepository.create).mockResolvedValue({
       id: "sig_1",
       userId: "user_1",
-      uploadId: input.uploadId,
+      uploadId: input.uploadId ?? "upload_1",
       title: input.title,
       description: null,
       latitude: input.latitude,
@@ -55,6 +56,16 @@ describe("SightingsService.create", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       upload: { id: "upload_1", url: "https://cdn.example/photo.jpg" } as never,
+      images: [
+        {
+          id: "si_1",
+          sightingId: "sig_1",
+          uploadId: "upload_1",
+          position: 0,
+          createdAt: new Date(),
+          upload: { id: "upload_1", url: "https://cdn.example/photo.jpg" } as never,
+        },
+      ],
       user: {
         id: "user_1",
         username: "matsuf",
@@ -69,6 +80,7 @@ describe("SightingsService.create", () => {
       expect.objectContaining({
         street: "Rua Lira, Vila Madalena",
         locationLabel: "Rua Lira, Vila Madalena",
+        uploadIds: ["upload_1"],
       }),
     );
     expect(result.street).toBe("Rua Lira, Vila Madalena");
@@ -87,7 +99,7 @@ describe("SightingsService.create", () => {
     vi.mocked(sightingsRepository.create).mockResolvedValue({
       id: "sig_1",
       userId: "user_1",
-      uploadId: input.uploadId,
+      uploadId: input.uploadIds?.[0] ?? "upload_1",
       title: input.title,
       description: null,
       latitude: input.latitude,
@@ -98,6 +110,7 @@ describe("SightingsService.create", () => {
       createdAt: new Date(),
       updatedAt: new Date(),
       upload: { id: "upload_1", url: "https://cdn.example/photo.jpg" } as never,
+      images: [],
       user: {
         id: "user_1",
         username: "matsuf",

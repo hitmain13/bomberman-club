@@ -14,7 +14,11 @@ export type IconName =
   | "chevron-right"
   | "arrow-left"
   | "x"
-  | "filter";
+  | "filter"
+  | "more-vertical"
+  | "edit"
+  | "trash"
+  | "share";
 
 export type IconSize = "sm" | "md" | "lg";
 
