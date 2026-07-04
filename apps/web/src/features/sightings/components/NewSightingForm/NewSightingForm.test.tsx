@@ -11,8 +11,10 @@ function withClient(node: ReactNode): JSX.Element {
 }
 
 describe("NewSightingForm", () => {
-  it("disables publish button before photo is selected", () => {
+  it("starts on photo capture step with camera and gallery actions", () => {
     render(withClient(<NewSightingForm onSubmit={vi.fn()} />));
-    expect(screen.getByRole("button", { name: "Publicar flagrado" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Abrir câmera" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Escolher da galeria" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Publicar flagrado" })).not.toBeInTheDocument();
   });
 });
