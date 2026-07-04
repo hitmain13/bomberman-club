@@ -2,6 +2,7 @@
 
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 
 import { styles } from "./SightingsMap.styles";
@@ -19,9 +20,37 @@ const icon = L.divIcon({
 });
 
 export function SightingsMap({ sightings, center, zoom }: SightingsMapProps): JSX.Element {
+  const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const onClick = (event: MouseEvent): void => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+      const link = target.closest("[data-nav-href]");
+      if (!(link instanceof HTMLAnchorElement)) {
+        return;
+      }
+      const href = link.dataset.navHref;
+      if (!href?.startsWith("/")) {
+        return;
+      }
+      event.preventDefault();
+      router.push(href);
+    };
+
+    container.addEventListener("click", onClick);
+    return () => container.removeEventListener("click", onClick);
+  }, [router]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) {
@@ -53,11 +82,12 @@ export function SightingsMap({ sightings, center, zoom }: SightingsMapProps): JS
     }
     markersRef.current = [];
     for (const sighting of sightings) {
+      const detailHref = `/sightings/${encodeURIComponent(sighting.id)}`;
       const marker = L.marker([sighting.latitude, sighting.longitude], { icon }).addTo(map);
       const popupHtml = `
         <strong>${escapeHtml(sighting.title)}</strong><br/>
         <span>@${escapeHtml(sighting.author.username)}</span><br/>
-        <a class="${styles.popupLink}" href="/sightings/${encodeURIComponent(sighting.id)}">Ver detalhes</a>
+        <a class="${styles.popupLink}" href="${detailHref}" data-nav-href="${detailHref}">Ver detalhes</a>
       `;
       marker.bindPopup(popupHtml);
       markersRef.current.push(marker);

@@ -2,7 +2,15 @@
 
 import type { PrivateUser } from "@bomberman/types";
 import { useQueryClient } from "@tanstack/react-query";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import {
   apiClient,
@@ -27,6 +35,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }): JSX.Element {
   const [user, setUser] = useState<PrivateUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isBootstrappingRef = useRef(true);
   const queryClient = useQueryClient();
 
   const applySession = useCallback(
@@ -46,7 +55,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
 
   useEffect(() => {
     let cancelled = false;
-    onUnauthorized(() => clearSession());
+    isBootstrappingRef.current = true;
+    onUnauthorized(() => {
+      if (!isBootstrappingRef.current) {
+        clearSession();
+      }
+    });
     setRefreshAccessToken(async () => {
       try {
         const session = await apiClient.auth.refresh();
@@ -71,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
         }
       } finally {
         if (!cancelled) {
+          isBootstrappingRef.current = false;
           setIsLoading(false);
         }
       }
