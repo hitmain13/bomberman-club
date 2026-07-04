@@ -59,6 +59,16 @@ body {
   overflow-x: hidden;
 }
 
+/* iOS Safari evita zoom automático em inputs com fonte >= 16px */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px;
+    scroll-margin-bottom: 5.5rem;
+  }
+}
+
 /* Hide scrollbar on horizontal pill rows */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

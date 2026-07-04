@@ -10,6 +10,6 @@ export const styles = {
   remove: "text-xs text-fg-muted hover:text-accent-danger",
   form: "flex items-center gap-2",
   input:
-    "h-11 flex-1 rounded-pill border border-border-default bg-bg-elevated px-4 text-sm text-fg-primary placeholder:text-fg-muted",
+    "h-11 flex-1 rounded-pill border border-border-default bg-bg-elevated px-4 text-base text-fg-primary placeholder:text-fg-muted",
   send: "inline-flex h-11 w-11 items-center justify-center rounded-full bg-fg-primary text-fg-inverted disabled:opacity-50",
 } as const;
