@@ -10,6 +10,7 @@
     "start": "bun run dist/main.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "deploy:web": "vercel deploy --prod --yes 2>&1",
     "test:watch": "vitest",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
