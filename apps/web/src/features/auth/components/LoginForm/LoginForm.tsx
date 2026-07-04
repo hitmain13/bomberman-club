@@ -37,7 +37,7 @@ export function LoginForm({ className }: LoginFormProps): JSX.Element {
       ) : null}
       <FormField
         label="E-mail ou usuário"
-        placeholder="speed.fabio"
+        placeholder="Digite seu usuário ou e-mail"
         autoComplete="username"
         errorMessage={errors.identifier?.message}
         {...register("identifier")}
@@ -45,7 +45,7 @@ export function LoginForm({ className }: LoginFormProps): JSX.Element {
       <FormField
         label="Senha"
         type="password"
-        placeholder="••••••••"
+        placeholder="Digite sua senha"
         autoComplete="current-password"
         errorMessage={errors.password?.message}
         {...register("password")}

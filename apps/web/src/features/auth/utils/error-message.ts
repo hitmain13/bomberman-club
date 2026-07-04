@@ -6,15 +6,21 @@ export function getAuthErrorMessage(error: unknown): string {
       return "Credenciais inválidas.";
     }
     if (error.status === 409) {
-      return error.message;
+      return error.message || "Conflito ao processar a solicitação.";
     }
     if (error.status === 422 && error.details) {
-      return Object.values(error.details).join(" ");
+      const details = Object.values(error.details).join(" ").trim();
+      return details || "Dados inválidos. Verifique os campos.";
     }
-    return error.message;
+    if (error.status >= 500) {
+      return "Erro no servidor. Tente novamente em instantes.";
+    }
+    const message = error.message.trim();
+    return message || "Não foi possível concluir agora. Tente novamente.";
   }
   if (error instanceof Error) {
-    return error.message;
+    const message = error.message.trim();
+    return message || "Não foi possível concluir agora. Tente novamente.";
   }
   return "Não foi possível concluir agora. Tente novamente.";
 }
