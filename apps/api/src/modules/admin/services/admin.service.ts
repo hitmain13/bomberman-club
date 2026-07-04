@@ -1,6 +1,7 @@
 import type { User } from "@prisma/client";
 
-import { NotFoundError } from "@/common/errors";
+import { ForbiddenError, NotFoundError } from "@/common/errors";
+import { authRepository } from "@/modules/auth/repositories/auth.repository";
 import { deleteObject } from "@/modules/uploads/utils/s3";
 
 import { type UploadWithOwner, adminRepository } from "../repositories/admin.repository";
@@ -61,10 +62,8 @@ export class AdminService {
     if (!upload) {
       throw new NotFoundError("Upload", id);
     }
-    // Delete from S3 first
-    await deleteObject(upload.bucketKey);
-    // Delete from database
     await adminRepository.deleteUpload(id);
+    await deleteObject(upload.bucketKey);
   }
 
   async listUsers(limit = 50, cursor?: string): Promise<UserListItem[]> {
@@ -77,7 +76,11 @@ export class AdminService {
     if (!user) {
       throw new NotFoundError("User", id);
     }
+    if (user.role === "ADMIN") {
+      throw new ForbiddenError("Não é possível banir administradores.");
+    }
     await adminRepository.banUser(id);
+    await authRepository.revokeAllRefreshTokensForUser(id);
   }
 
   async unbanUser(id: string): Promise<void> {

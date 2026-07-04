@@ -1,6 +1,6 @@
 import type { AuthResponse, LoginInput, RegisterInput } from "@bomberman/types";
 
-import { ConflictError, UnauthorizedError } from "@/common/errors";
+import { ConflictError, ForbiddenError, UnauthorizedError } from "@/common/errors";
 import { usersRepository } from "@/modules/users/repositories/users.repository";
 
 import { toPrivateUser } from "../mappers/auth.mapper";
@@ -18,6 +18,12 @@ interface IssuedSession {
   refreshTokenExpiresAt: Date;
 }
 
+function assertNotBanned(user: { bannedAt: Date | null }): void {
+  if (user.bannedAt) {
+    throw new ForbiddenError("Conta suspensa.");
+  }
+}
+
 async function buildSession(
   user: Awaited<ReturnType<typeof authRepository.findUserById>>,
   context: ClientContext,
@@ -25,6 +31,7 @@ async function buildSession(
   if (!user) {
     throw new UnauthorizedError();
   }
+  assertNotBanned(user);
   const access = await issueAccessToken({ sub: user.id, username: user.username, role: user.role });
   const refresh = issueRefreshToken();
   await authRepository.createRefreshToken({

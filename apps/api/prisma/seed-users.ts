@@ -11,6 +11,11 @@ interface UserSeed {
 
 const users: UserSeed[] = [
   {
+    username: "smoke",
+    email: "smoke+bomberman@example.com",
+    password: "Onboard@8723",
+  },
+  {
     username: "matsu-bombermanclub",
     email: "fabio.matsumoto.dev@gmail.com",
     password: "Onboard@8723",

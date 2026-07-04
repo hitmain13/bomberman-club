@@ -2,6 +2,7 @@ import type { Role } from "@prisma/client";
 import { Elysia } from "elysia";
 
 import { ForbiddenError, UnauthorizedError } from "@/common/errors";
+import { authRepository } from "@/modules/auth/repositories/auth.repository";
 import { type AccessTokenPayload, verifyAccessToken } from "@/modules/auth/services/token.service";
 
 export interface AuthContextUser {
@@ -30,6 +31,10 @@ export const authPlugin = new Elysia({ name: "auth" }).derive(
       return { currentUser: null };
     }
     const payload: AccessTokenPayload = await verifyAccessToken(token);
+    const user = await authRepository.findUserById(payload.sub);
+    if (!user || user.bannedAt) {
+      return { currentUser: null };
+    }
     return {
       currentUser: {
         id: payload.sub,
