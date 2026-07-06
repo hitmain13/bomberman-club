@@ -43,7 +43,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
   const [user, setUser] = useState<PrivateUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isBootstrappingRef = useRef(true);
+  const refreshTimerRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
+
+  const scheduleRefresh = useCallback(
+    (expiresIn: number) => {
+      if (refreshTimerRef.current) {
+        window.clearTimeout(refreshTimerRef.current);
+      }
+      const delayMs = Math.max(0, expiresIn * 1000 - 60_000);
+      refreshTimerRef.current = window.setTimeout(() => {
+        void refreshSession().then((session) => {
+          if (session) {
+            setAccessToken(session.accessToken);
+            setUser(session.user);
+            persistSession({
+              user: session.user,
+              accessToken: session.accessToken,
+              expiresIn: session.expiresIn ?? 900,
+            });
+            queryClient.setQueryData(queryKeys.auth.me(), session.user);
+            scheduleRefresh(session.expiresIn ?? 900);
+          }
+        });
+      }, delayMs);
+    },
+    [queryClient],
+  );
+
+  const clearRefreshTimer = useCallback(() => {
+    if (refreshTimerRef.current) {
+      window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
 
   const applySession = useCallback(
     (session: { user: PrivateUser; accessToken: string; expiresIn?: number }) => {
@@ -55,16 +88,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
         expiresIn: session.expiresIn ?? 900,
       });
       queryClient.setQueryData(queryKeys.auth.me(), session.user);
+      scheduleRefresh(session.expiresIn ?? 900);
     },
-    [queryClient],
+    [queryClient, scheduleRefresh],
   );
 
   const clearSession = useCallback(() => {
     setAccessToken(null);
     setUser(null);
+    clearRefreshTimer();
     clearPersistedSession();
     queryClient.removeQueries({ queryKey: queryKeys.auth.me() });
-  }, [queryClient]);
+  }, [queryClient, clearRefreshTimer]);
 
   useEffect(() => {
     let cancelled = false;
@@ -127,8 +162,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
 
     return () => {
       cancelled = true;
+      clearRefreshTimer();
     };
-  }, [applySession, clearSession, queryClient]);
+  }, [applySession, clearSession, clearRefreshTimer, queryClient]);
 
   const signIn = useCallback(
     async (identifier: string, password: string) => {
