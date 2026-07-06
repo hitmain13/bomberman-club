@@ -16,6 +16,7 @@ import {
   useCarParts,
   useCarSpecs,
 } from "@/features/cars";
+import { useMyCars } from "@/features/garage";
 import { useAuth } from "@/shared/contexts/auth-context";
 import { RequireAuth } from "@/shared/contexts/require-auth";
 
@@ -25,6 +26,7 @@ interface PageProps {
 
 function CarDetailContent({ id }: { id: string }): JSX.Element {
   const { user } = useAuth();
+  const myCars = useMyCars();
   const carQuery = useCar(id);
   const partsQuery = useCarParts(id);
   const specsQuery = useCarSpecs(id);
@@ -39,8 +41,8 @@ function CarDetailContent({ id }: { id: string }): JSX.Element {
   const car = carQuery.data;
   const stageSpec = specsQuery.data?.find((spec) => spec.definition.key === "stage");
   const stageLabel = stageSpec?.valueString ?? null;
-  const ownerCheckGarageId = car.garageId;
-  const isOwner = user !== null && partsQuery.data !== undefined && Boolean(ownerCheckGarageId);
+  const isOwner =
+    user !== null && myCars.data !== undefined && myCars.data.some((entry) => entry.id === id);
 
   return (
     <div className="flex flex-col gap-6">

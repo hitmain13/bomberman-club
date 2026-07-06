@@ -9,16 +9,6 @@ import { CarBuilder } from "../builders/car.builder";
 import { toCarResponse } from "../mappers/cars.mapper";
 import { carsRepository } from "../repositories/cars.repository";
 
-function ensureOwner<T extends { garageId: string }>(
-  car: T,
-  ownedGarageIds: ReadonlySet<string>,
-): T {
-  if (!ownedGarageIds.has(car.garageId)) {
-    throw new ForbiddenError("Você não pode modificar este carro.");
-  }
-  return car;
-}
-
 export class CarsService {
   async listMine(userId: string): Promise<CarResponse[]> {
     const cars = await carsRepository.listByOwnerId(userId);
@@ -61,11 +51,13 @@ export class CarsService {
   }
 
   async update(userId: string, id: string, input: CarInput): Promise<CarResponse> {
-    const existing = await carsRepository.findByIdForOwner(id, userId);
+    const existing = await carsRepository.findByIdWithOwner(id);
     if (!existing) {
       throw new NotFoundError("Car", id);
     }
-    ensureOwner(existing, new Set([existing.garageId]));
+    if (existing.garage.userId !== userId) {
+      throw new ForbiddenError("Você não pode modificar este carro.");
+    }
     const updated = await carsRepository.update(id, {
       nickname: input.nickname,
       brand: input.brand,
@@ -85,9 +77,12 @@ export class CarsService {
   }
 
   async remove(userId: string, id: string): Promise<void> {
-    const existing = await carsRepository.findByIdForOwner(id, userId);
+    const existing = await carsRepository.findByIdWithOwner(id);
     if (!existing) {
       throw new NotFoundError("Car", id);
+    }
+    if (existing.garage.userId !== userId) {
+      throw new ForbiddenError("Você não pode remover este carro.");
     }
     const uploadIds = await uploadsCleanupRepository.collectCarUploadIds(id);
     await carsRepository.remove(id);

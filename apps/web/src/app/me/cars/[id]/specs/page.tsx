@@ -9,6 +9,7 @@ import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { getAuthErrorMessage } from "@/features/auth/utils/error-message";
 import {
+  CarOwnerGuard,
   CarSpecsList,
   SetCarSpecForm,
   useCarSpecs,
@@ -37,23 +38,25 @@ function SpecsContent({ carId }: { carId: string }): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <SetCarSpecForm
-        definitions={definitions.data}
-        onSubmit={(input) => set.mutate(input)}
-        isSubmitting={set.isPending}
-        errorMessage={set.error ? getAuthErrorMessage(set.error) : null}
-      />
-      {list.isLoading ? (
-        <StatePanel kind="loading" />
-      ) : list.error ? (
-        <StatePanel kind="error" />
-      ) : list.data && list.data.length > 0 ? (
-        <CarSpecsList specs={list.data} />
-      ) : (
-        <StatePanel kind="empty" title="Nenhuma especificação definida." />
-      )}
-    </div>
+    <CarOwnerGuard carId={carId}>
+      <div className="flex flex-col gap-6">
+        <SetCarSpecForm
+          definitions={definitions.data}
+          onSubmit={(input) => set.mutate(input)}
+          isSubmitting={set.isPending}
+          errorMessage={set.error ? getAuthErrorMessage(set.error) : null}
+        />
+        {list.isLoading ? (
+          <StatePanel kind="loading" />
+        ) : list.error ? (
+          <StatePanel kind="error" />
+        ) : list.data && list.data.length > 0 ? (
+          <CarSpecsList specs={list.data} />
+        ) : (
+          <StatePanel kind="empty" title="Nenhuma especificação definida." />
+        )}
+      </div>
+    </CarOwnerGuard>
   );
 }
 

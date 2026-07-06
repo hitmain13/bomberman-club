@@ -5,6 +5,7 @@ export { CarSpecsList } from "./components/CarSpecsList";
 export { CarForm } from "./components/CarForm";
 export { AddCarPartForm } from "./components/AddCarPartForm";
 export { SetCarSpecForm } from "./components/SetCarSpecForm";
+export { CarOwnerGuard } from "./components/CarOwnerGuard";
 export { useCar } from "./hooks/use-car";
 export { useCarParts, useAddCarPart, useRemoveCarPart } from "./hooks/use-car-parts";
 export { useCarSpecs, useSetCarSpec } from "./hooks/use-car-specs";

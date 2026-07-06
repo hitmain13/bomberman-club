@@ -8,7 +8,7 @@ import { Icon } from "@/components/atoms/Icon";
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { getAuthErrorMessage } from "@/features/auth/utils/error-message";
-import { CarForm, useCar, useDeleteCar, useUpdateCar } from "@/features/cars";
+import { CarForm, CarOwnerGuard, useCar, useDeleteCar, useUpdateCar } from "@/features/cars";
 import { RequireAuth } from "@/shared/contexts/require-auth";
 
 interface PageProps {
@@ -28,27 +28,29 @@ function EditCarContent({ id }: { id: string }): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <CarForm
-        garageId={car.garageId}
-        initialCar={car}
-        onSubmit={(values) => update.mutate(values)}
-        isSubmitting={update.isPending}
-        errorMessage={update.error ? getAuthErrorMessage(update.error) : null}
-      />
-      <Button
-        variant="danger"
-        fullWidth
-        isLoading={remove.isPending}
-        onClick={() => {
-          if (window.confirm("Tem certeza? Esta ação não pode ser desfeita.")) {
-            remove.mutate();
-          }
-        }}
-      >
-        Excluir carro
-      </Button>
-    </div>
+    <CarOwnerGuard carId={id}>
+      <div className="flex flex-col gap-6">
+        <CarForm
+          garageId={car.garageId}
+          initialCar={car}
+          onSubmit={(values) => update.mutate(values)}
+          isSubmitting={update.isPending}
+          errorMessage={update.error ? getAuthErrorMessage(update.error) : null}
+        />
+        <Button
+          variant="danger"
+          fullWidth
+          isLoading={remove.isPending}
+          onClick={() => {
+            if (window.confirm("Tem certeza? Esta ação não pode ser desfeita.")) {
+              remove.mutate();
+            }
+          }}
+        >
+          Excluir carro
+        </Button>
+      </div>
+    </CarOwnerGuard>
   );
 }
 

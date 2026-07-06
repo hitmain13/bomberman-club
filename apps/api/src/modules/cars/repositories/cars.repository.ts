@@ -3,8 +3,10 @@ import type { Car, Prisma } from "@prisma/client";
 import { prisma } from "@/database/prisma";
 
 export type CarWithCover = Car & { cover: { url: string } | null };
+export type CarWithOwner = CarWithCover & { garage: { userId: string } };
 
 const includeCover = { cover: { select: { url: true } } } as const;
+const includeWithOwner = { ...includeCover, garage: { select: { userId: true } } } as const;
 
 export class CarsRepository {
   listByOwnerId(userId: string): Promise<CarWithCover[]> {
@@ -44,6 +46,10 @@ export class CarsRepository {
 
   findById(id: string): Promise<CarWithCover | null> {
     return prisma.car.findUnique({ where: { id }, include: includeCover });
+  }
+
+  findByIdWithOwner(id: string): Promise<CarWithOwner | null> {
+    return prisma.car.findUnique({ where: { id }, include: includeWithOwner });
   }
 
   findByIdForOwner(id: string, userId: string): Promise<CarWithCover | null> {

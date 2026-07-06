@@ -10,6 +10,7 @@ import { AppShell } from "@/components/templates/AppShell";
 import { getAuthErrorMessage } from "@/features/auth/utils/error-message";
 import {
   AddCarPartForm,
+  CarOwnerGuard,
   CarPartsList,
   useAddCarPart,
   useCarParts,
@@ -27,22 +28,24 @@ function PartsContent({ carId }: { carId: string }): JSX.Element {
   const remove = useRemoveCarPart(carId);
 
   return (
-    <div className="flex flex-col gap-6">
-      <AddCarPartForm
-        onSubmit={(input) => add.mutate(input)}
-        isSubmitting={add.isPending}
-        errorMessage={add.error ? getAuthErrorMessage(add.error) : null}
-      />
-      {list.isLoading ? (
-        <StatePanel kind="loading" />
-      ) : list.error ? (
-        <StatePanel kind="error" />
-      ) : list.data && list.data.length > 0 ? (
-        <CarPartsList parts={list.data} onRemove={(id) => remove.mutate(id)} />
-      ) : (
-        <StatePanel kind="empty" title="Nenhuma peça instalada ainda." />
-      )}
-    </div>
+    <CarOwnerGuard carId={carId}>
+      <div className="flex flex-col gap-6">
+        <AddCarPartForm
+          onSubmit={(input) => add.mutate(input)}
+          isSubmitting={add.isPending}
+          errorMessage={add.error ? getAuthErrorMessage(add.error) : null}
+        />
+        {list.isLoading ? (
+          <StatePanel kind="loading" />
+        ) : list.error ? (
+          <StatePanel kind="error" />
+        ) : list.data && list.data.length > 0 ? (
+          <CarPartsList parts={list.data} onRemove={(id) => remove.mutate(id)} />
+        ) : (
+          <StatePanel kind="empty" title="Nenhuma peça instalada ainda." />
+        )}
+      </div>
+    </CarOwnerGuard>
   );
 }
 
