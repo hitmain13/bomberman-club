@@ -52,6 +52,23 @@ User, RefreshToken, PasswordReset, Garage, Car, CarImage, Upload, SpecificationD
 - `/health`
 - `/docs` (Swagger em dev)
 
+## Sprint de Estabilidade, Performance e Correções
+
+Concluída em 2026-07-06. Foco: estabilidade, previsibilidade, performance, robustez.
+
+| Bug/Feature | Causa raiz | Correção principal | Impacto |
+|-------------|-----------|-------------------|---------|
+| Exclusão de carro 404 | `findByIdForOwner` retornava 404 para não-dono; `isOwner` quebrado no frontend | `findById` + 403 explícito; `CarOwnerGuard` e `isOwner` via `useMyCars` | Segurança e mensagens corretas |
+| Refresh lento (~18s) | Backoff `[0,2,5,10]s` bloqueando `isLoading`; 401 retentado | Bootstrap não bloqueante; retry só para erros de rede; refresh proativo | UI em <1s |
+| Sessão admin | Snapshot com token expirado + refresh 401 | Proxy same-origin `/api` + refresh proativo | Sessão estável cross-origin |
+| Upload múltiplo | Erros engolidos, sem retry, `accept` permissivo | Retry 3× por foto, mensagens reais, botão tentar, accept alinhado | Consistência |
+| Geo presa | `requestLocation` só no 1º lote; sem timeout | Geo no mount, timeout 12s, retry manual | UX melhor |
+| Datetime overflow | Input intrínseco maior que viewport | Regra CSS `min-w-0 max-w-full` | Sem scroll horizontal |
+| Carrossel | Sem drag visual, touch start errado | Pointer events, translateX, snapping | Experiência fluida |
+| Busca endereço | Não existia | `GET /geo/search` + Nominatim + campo no picker | Nova funcionalidade solicitada |
+
+Documentação: ADRs 0012 e 0013.
+
 ## Pendências para V1.1
 
 - Storybook ainda não instalado (stories prontas em todas pastas).

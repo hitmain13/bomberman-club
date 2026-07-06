@@ -15,3 +15,5 @@ Decisões arquiteturais detalhadas vivem em `docs/architecture/adr/`. Este arqui
 | 0009 | Keep-alive Render: GitHub Actions cron + `ApiHeartbeat` client-side |
 | 0010 | `UploadCleanupService`: exclusão DB + S3 reutilizável (cars, sightings, admin, uploads) |
 | 0011 | Sessão resiliente (`refreshSessionWithRetry` + snapshot) e filtros na URL (`useFilterParams`) |
+| 0012 | Bootstrap de auth não bloqueante + proxy same-origin `/api` para cookies first-party |
+| 0013 | Forward geocode search no `LocationPicker` (Nominatim, throttle, cache) |

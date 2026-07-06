@@ -57,8 +57,9 @@ packages/
 - Reuso de `Upload` para qualquer mídia.
 - Exclusão de mídia via `UploadCleanupService` (DB + objeto S3/R2).
 - Filtros de UI sincronizados com query string (`useFilterParams`).
-- Sessão: refresh cookie httpOnly + snapshot em `sessionStorage` + retry no cold start.
+- Sessão: refresh cookie httpOnly + snapshot em `sessionStorage` + bootstrap não bloqueante + proxy same-origin `/api` para cookies first-party.
 - Mitigação de hibernação Render: keep-alive externo (GH Actions) + heartbeat client-side.
+- Forward geocode search no `LocationPicker` (Nominatim, throttle, cache).
 - Pixel-perfect com o `wireframe.png` mobile-first 375px.
 
 ## Roadmap (SDD)
