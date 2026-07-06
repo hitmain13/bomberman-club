@@ -12,7 +12,7 @@ O backend hospedado no Render (tier gratuito) entra em hibernação após ~15 mi
 
 Adotar uma estratégia dupla, de baixo custo e facilmente removível:
 
-1. **GitHub Actions** — workflow `render-keepalive.yml` com cron a cada 14 minutos chamando `GET /health`.
+1. **GitHub Actions** — workflow `render-keepalive.yml` com cinco crons defasados (intervalo efetivo de 1 minuto; limite do GitHub é 5 min por expressão) chamando `GET /health`.
 2. **Cliente web** — componente `ApiHeartbeat` que envia ping periódico (10 min) enquanto o usuário está autenticado.
 
 Nenhuma alteração na API além do endpoint `/health` já existente.
