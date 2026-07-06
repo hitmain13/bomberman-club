@@ -84,6 +84,7 @@ export function NewSightingForm({
     (lat: number, lng: number): void => {
       setValue("latitude", lat, { shouldValidate: true, shouldDirty: true });
       setValue("longitude", lng, { shouldValidate: true, shouldDirty: true });
+      setLocating(false);
     },
     [setValue],
   );
@@ -102,12 +103,19 @@ export function NewSightingForm({
       return;
     }
 
+    const timeout = window.setTimeout(() => {
+      setGeoError("Não foi possível obter sua localização. Escolha no mapa.");
+      setLocating(false);
+    }, 12_000);
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        window.clearTimeout(timeout);
         applyLocation(position.coords.latitude, position.coords.longitude);
         setLocating(false);
       },
       (error) => {
+        window.clearTimeout(timeout);
         setGeoError(
           error.code === error.PERMISSION_DENIED
             ? "Permissão de localização negada. Escolha no mapa."
@@ -220,6 +228,10 @@ export function NewSightingForm({
       return next;
     });
   };
+
+  useEffect(() => {
+    requestLocation();
+  }, [requestLocation]);
 
   useEffect(() => {
     if (autoCapture && !autoCaptureTriggered.current && !hasPhotos) {
@@ -364,6 +376,18 @@ export function NewSightingForm({
             </span>
             <Icon name="chevron-right" size="sm" />
           </button>
+          {!hasLocation && !locating ? (
+            <button
+              type="button"
+              onClick={() => {
+                geolocationRequested.current = false;
+                requestLocation();
+              }}
+              className="mt-1 text-xs text-fg-secondary underline"
+            >
+              Usar minha localização
+            </button>
+          ) : null}
           {hasLocation ? (
             <p className={`mt-1 ${styles.hint}`}>
               O nome da rua será obtido automaticamente ao publicar.
