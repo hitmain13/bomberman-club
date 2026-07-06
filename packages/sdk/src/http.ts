@@ -61,7 +61,7 @@ export class HttpClient {
     responseSchema: TResponseSchema;
     skipAuthRetry?: boolean;
   }): Promise<z.infer<TResponseSchema>> {
-    const response = await this.fetchImpl(`${this.baseUrl}${options.path}`, {
+    const response = await this.fetchImpl(this.buildUrl(options.path), {
       method: "POST",
       credentials: "include",
       headers: this.authHeader(),
@@ -179,7 +179,7 @@ export class HttpClient {
   }
 
   private buildUrl(path: string, query?: RequestOptions<z.ZodTypeAny>["query"]): string {
-    const url = new URL(`${this.baseUrl}${path}`);
+    const url = this.resolveUrl(path);
     if (query) {
       for (const [key, value] of Object.entries(query)) {
         if (value === undefined) {
@@ -189,6 +189,18 @@ export class HttpClient {
       }
     }
     return url.toString();
+  }
+
+  private resolveUrl(path: string): URL {
+    const target = `${this.baseUrl}${path}`;
+    if (/^https?:\/\//i.test(target)) {
+      return new URL(target);
+    }
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
+    return new URL(target, origin);
   }
 }
 
