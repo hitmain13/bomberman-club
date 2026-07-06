@@ -167,7 +167,15 @@ export class HttpClient {
     this.refreshInFlight ??= this.refreshAccessToken().finally(() => {
       this.refreshInFlight = null;
     });
-    return this.refreshInFlight;
+    try {
+      return await this.refreshInFlight;
+    } catch (error) {
+      this.refreshInFlight = null;
+      if (error instanceof ApiError && error.status === 401) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   private buildUrl(path: string, query?: RequestOptions<z.ZodTypeAny>["query"]): string {

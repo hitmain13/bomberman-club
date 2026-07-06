@@ -23,6 +23,7 @@ import { refreshSession, refreshSessionWithRetry } from "@/shared/lib/refresh-se
 import {
   clearPersistedSession,
   persistSession,
+  readPersistedSession,
   readPersistedUserSnapshot,
 } from "@/shared/lib/session-persistence";
 
@@ -38,19 +39,8 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function restorePersistedSession(): { user: PrivateUser; accessToken: string } | null {
-  const persisted = readPersistedUserSnapshot();
-  if (!persisted) {
-    return null;
-  }
-  setAccessToken(persisted.accessToken);
-  return { user: persisted.user, accessToken: persisted.accessToken };
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }): JSX.Element {
-  const [user, setUser] = useState<PrivateUser | null>(
-    () => restorePersistedSession()?.user ?? null,
-  );
+  const [user, setUser] = useState<PrivateUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isBootstrappingRef = useRef(true);
   const queryClient = useQueryClient();
@@ -96,6 +86,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
     });
 
     void (async () => {
+      const validSession = readPersistedSession();
+      if (validSession) {
+        setAccessToken(validSession.accessToken);
+        setUser(validSession.user);
+        queryClient.setQueryData(queryKeys.auth.me(), validSession.user);
+        setIsLoading(false);
+        isBootstrappingRef.current = false;
+        return;
+      }
+
+      const snapshot = readPersistedUserSnapshot();
+      if (snapshot) {
+        setAccessToken(snapshot.accessToken);
+        setUser(snapshot.user);
+        queryClient.setQueryData(queryKeys.auth.me(), snapshot.user);
+      }
+
+      setIsLoading(false);
+      isBootstrappingRef.current = false;
+
+      if (cancelled) {
+        return;
+      }
+
       const session = await refreshSessionWithRetry();
       if (cancelled) {
         return;
@@ -106,21 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
         return;
       }
 
-      const snapshot = readPersistedUserSnapshot();
       if (snapshot) {
-        setAccessToken(snapshot.accessToken);
-        setUser(snapshot.user);
-        queryClient.setQueryData(queryKeys.auth.me(), snapshot.user);
-        return;
+        clearSession();
       }
-
-      clearSession();
-    })().finally(() => {
-      if (!cancelled) {
-        isBootstrappingRef.current = false;
-        setIsLoading(false);
-      }
-    });
+    })();
 
     return () => {
       cancelled = true;
