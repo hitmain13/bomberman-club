@@ -4,6 +4,7 @@ export { NewSightingForm } from "./components/NewSightingForm";
 export { useSightings, useSighting } from "./hooks/use-sightings";
 export { useUserSightings } from "./hooks/use-user-sightings";
 export { useGeoSearch } from "./hooks/use-geo-search";
+export { useReverseGeocode } from "./hooks/use-reverse-geocode";
 export {
   useCreateSighting,
   useDeleteSighting,

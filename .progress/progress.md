@@ -69,6 +69,31 @@ Concluída em 2026-07-06. Foco: estabilidade, previsibilidade, performance, robu
 
 Documentação: ADRs 0012 e 0013.
 
+## Platform Improvements V2
+
+Concluída em 2026-07-06.
+
+| Feature | Causa raiz | Correção principal |
+|---------|-----------|-------------------|
+| Geo UX | Sugestão não preenchia input; hint/coords expostas; reverse só no backend | `GET /geo/reverse`, `useReverseGeocode`, endereço amigável em toda UI |
+| Reordenação | HTML5 DnD não funciona em touch | Pointer Events + long-press mobile |
+| Compressão | Descarte quando blob ≥ original apesar de resize | WebP 0.72 / 1400px + aceitar ganho dimensional |
+| Admin carros | `CarsService` só checava dono; `findByIdForOwner` bloqueava admin | `car.policy.ts` + viewer com role |
+| Publicação flagrado | FK/unique Prisma sem validação prévia → HTTP 500 | `validateUploadIds` + normalização de data |
+| Admin assets | Thumbnail sem link | `<a target="_blank">` para URL Cloudflare |
+
+Documentação: ADR 0014.
+
+## Sessão cookie-first (anti-logout)
+
+Concluída em 2026-07-06.
+
+| Problema | Causa raiz | Correção |
+|---------|-----------|----------|
+| Logout esporádico | Race na rotação do refresh token; access token em sessionStorage; logout em falha de rede | Cookies HttpOnly `bc_access` + `bc_refresh`; grace period 60s; bootstrap resiliente |
+
+Documentação: ADR 0015.
+
 ## Pendências para V1.1
 
 - Storybook ainda não instalado (stories prontas em todas pastas).

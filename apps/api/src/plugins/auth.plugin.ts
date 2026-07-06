@@ -4,6 +4,7 @@ import { Elysia } from "elysia";
 import { ForbiddenError, UnauthorizedError } from "@/common/errors";
 import { authRepository } from "@/modules/auth/repositories/auth.repository";
 import { type AccessTokenPayload, verifyAccessToken } from "@/modules/auth/services/token.service";
+import { readAccessToken } from "@/modules/auth/utils/auth-cookies";
 
 export interface AuthContextUser {
   id: string;
@@ -11,7 +12,7 @@ export interface AuthContextUser {
   role: Role;
 }
 
-function extractToken(authorization: string | null): string | null {
+function extractBearerToken(authorization: string | null): string | null {
   if (!authorization) {
     return null;
   }
@@ -25,23 +26,27 @@ function extractToken(authorization: string | null): string | null {
 export const authPlugin = new Elysia({ name: "auth" }).derive(
   { as: "global" },
   async ({ request }): Promise<{ currentUser: AuthContextUser | null }> => {
-    const authorization = request.headers.get("authorization");
-    const token = extractToken(authorization);
+    const token =
+      readAccessToken(request) ?? extractBearerToken(request.headers.get("authorization"));
     if (!token) {
       return { currentUser: null };
     }
-    const payload: AccessTokenPayload = await verifyAccessToken(token);
-    const user = await authRepository.findUserById(payload.sub);
-    if (!user || user.bannedAt) {
+    try {
+      const payload: AccessTokenPayload = await verifyAccessToken(token);
+      const user = await authRepository.findUserById(payload.sub);
+      if (!user || user.bannedAt) {
+        return { currentUser: null };
+      }
+      return {
+        currentUser: {
+          id: payload.sub,
+          username: payload.username,
+          role: payload.role,
+        },
+      };
+    } catch {
       return { currentUser: null };
     }
-    return {
-      currentUser: {
-        id: payload.sub,
-        username: payload.username,
-        role: payload.role,
-      },
-    };
   },
 );
 

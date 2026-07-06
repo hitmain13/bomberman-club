@@ -63,6 +63,15 @@ export class SightingsRepository {
     return prisma.sighting.findUnique({ where: { id }, include: includeRelations });
   }
 
+  isCoverUploadInUse(uploadIds: string[]): Promise<boolean> {
+    if (uploadIds.length === 0) {
+      return Promise.resolve(false);
+    }
+    return prisma.sighting
+      .findFirst({ where: { uploadId: { in: uploadIds } }, select: { id: true } })
+      .then((row) => row !== null);
+  }
+
   create(data: {
     userId: string;
     uploadId: string;

@@ -47,6 +47,8 @@ export const queryKeys = {
   },
   geo: {
     search: (q: string) => ["geo", "search", q] as const,
+    reverse: (lat: number, lng: number) =>
+      ["geo", "reverse", lat.toFixed(5), lng.toFixed(5)] as const,
   },
   discovery: {
     feed: (scope: FeedScope) => ["discovery", "feed", scope] as const,

@@ -41,6 +41,14 @@ export class AuthResource {
     });
   }
 
+  session(): Promise<AuthResponse> {
+    return this.http.request({
+      method: "GET",
+      path: "/auth/session",
+      responseSchema: authResponseSchema,
+    });
+  }
+
   logout(): Promise<{ ok: boolean }> {
     return this.http.request({
       method: "POST",

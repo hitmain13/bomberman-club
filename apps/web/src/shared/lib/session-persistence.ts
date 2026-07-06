@@ -1,65 +1,68 @@
 import type { AuthResponse, PrivateUser } from "@bomberman/types";
 
-const SESSION_STORAGE_KEY = "bc_session";
+const USER_CACHE_KEY = "bc_user_cache";
 
-interface PersistedSession {
+interface CachedUser {
   user: PrivateUser;
-  accessToken: string;
-  expiresAt: number;
+  cachedAt: number;
 }
 
-function readRawSession(): PersistedSession | null {
+export function persistUserCache(user: PrivateUser): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const payload: CachedUser = { user, cachedAt: Date.now() };
+  localStorage.setItem(USER_CACHE_KEY, JSON.stringify(payload));
+}
+
+export function readUserCache(): PrivateUser | null {
   if (typeof window === "undefined") {
     return null;
   }
   try {
-    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
+    const raw = localStorage.getItem(USER_CACHE_KEY);
     if (!raw) {
       return null;
     }
-    const parsed = JSON.parse(raw) as PersistedSession;
-    if (!parsed.accessToken || !parsed.user || typeof parsed.expiresAt !== "number") {
-      sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    const parsed = JSON.parse(raw) as CachedUser;
+    if (!parsed.user?.id) {
+      localStorage.removeItem(USER_CACHE_KEY);
       return null;
     }
-    return parsed;
+    return parsed.user;
   } catch {
-    sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    localStorage.removeItem(USER_CACHE_KEY);
     return null;
   }
 }
 
+export function clearUserCache(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  localStorage.removeItem(USER_CACHE_KEY);
+}
+
+/** @deprecated Tokens live in HttpOnly cookies; kept for backward-compatible imports. */
 export function persistSession(session: AuthResponse): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  const payload: PersistedSession = {
-    user: session.user,
-    accessToken: session.accessToken,
-    expiresAt: Date.now() + session.expiresIn * 1000,
-  };
-  sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+  persistUserCache(session.user);
 }
 
-export function readPersistedSession(): PersistedSession | null {
-  const parsed = readRawSession();
-  if (!parsed || parsed.expiresAt <= Date.now()) {
+/** @deprecated Use cookie session instead of sessionStorage tokens. */
+export function readPersistedSession(): null {
+  return null;
+}
+
+/** @deprecated Use readUserCache instead. */
+export function readPersistedUserSnapshot(): Pick<AuthResponse, "user" | "accessToken"> | null {
+  const user = readUserCache();
+  if (!user) {
     return null;
   }
-  return parsed;
+  return { user, accessToken: "" };
 }
 
-export function readPersistedUserSnapshot(): Pick<PersistedSession, "user" | "accessToken"> | null {
-  const parsed = readRawSession();
-  if (!parsed) {
-    return null;
-  }
-  return { user: parsed.user, accessToken: parsed.accessToken };
-}
-
+/** @deprecated */
 export function clearPersistedSession(): void {
-  if (typeof window === "undefined") {
-    return;
-  }
-  sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  clearUserCache();
 }

@@ -50,13 +50,21 @@ function UploadsTab(): JSX.Element {
             >
               <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md bg-bg-elevated">
                 {upload.mime.startsWith("image/") ? (
-                  <Image
-                    src={upload.url}
-                    alt="Preview"
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
+                  <a
+                    href={upload.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block h-full w-full"
+                    aria-label="Abrir imagem original em nova aba"
+                  >
+                    <Image
+                      src={upload.url}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                      sizes="64px"
+                    />
+                  </a>
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <Icon name="camera" size="sm" />

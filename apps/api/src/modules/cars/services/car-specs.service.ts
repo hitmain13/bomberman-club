@@ -3,8 +3,10 @@ import {
   type SpecValueResponse,
   validateSpecValueInput,
 } from "@bomberman/types";
+import type { Role } from "@prisma/client";
 
 import { ForbiddenError, NotFoundError, ValidationError } from "@/common/errors";
+import { canManageCar } from "@/common/policies/car.policy";
 import { catalogRepository } from "@/modules/catalog";
 import { toSpecDefinitionDto } from "@/modules/catalog/mappers/catalog.mapper";
 
@@ -12,9 +14,17 @@ import { toSpecValueResponse } from "../mappers/car-specs.mapper";
 import { carSpecsRepository } from "../repositories/car-specs.repository";
 import { carsRepository } from "../repositories/cars.repository";
 
-async function ensureCarOwnership(carId: string, userId: string): Promise<void> {
-  const car = await carsRepository.findByIdForOwner(carId, userId);
+interface CarViewer {
+  id: string;
+  role: Role;
+}
+
+async function ensureCarAccess(carId: string, viewer: CarViewer): Promise<void> {
+  const car = await carsRepository.findByIdWithOwner(carId);
   if (!car) {
+    throw new NotFoundError("Car", carId);
+  }
+  if (!canManageCar(viewer, car.garage.userId)) {
     throw new ForbiddenError("Você não pode modificar este carro.");
   }
 }
@@ -42,8 +52,8 @@ export class CarSpecsService {
     return values.map(toSpecValueResponse);
   }
 
-  async set(carId: string, userId: string, input: SpecValueInput): Promise<SpecValueResponse> {
-    await ensureCarOwnership(carId, userId);
+  async set(carId: string, viewer: CarViewer, input: SpecValueInput): Promise<SpecValueResponse> {
+    await ensureCarAccess(carId, viewer);
     const definition = await catalogRepository.findSpecDefinitionById(input.definitionId);
     if (!definition) {
       throw new NotFoundError("SpecificationDefinition", input.definitionId);

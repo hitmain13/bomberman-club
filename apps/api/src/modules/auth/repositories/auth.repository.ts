@@ -57,6 +57,21 @@ export class AuthRepository {
     });
   }
 
+  findRecentlyRevokedRefreshToken(
+    tokenHash: string,
+    graceMs: number,
+  ): Promise<RefreshToken | null> {
+    const since = new Date(Date.now() - graceMs);
+    return prisma.refreshToken.findFirst({
+      where: {
+        tokenHash,
+        revokedAt: { gte: since },
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { revokedAt: "desc" },
+    });
+  }
+
   revokeRefreshToken(id: string): Promise<RefreshToken> {
     return prisma.refreshToken.update({
       where: { id },

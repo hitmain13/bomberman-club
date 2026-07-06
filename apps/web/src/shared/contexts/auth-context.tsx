@@ -19,13 +19,12 @@ import {
   setRefreshAccessToken,
 } from "@/shared/lib/api-client";
 import { queryKeys } from "@/shared/lib/query-keys";
-import { refreshSession, refreshSessionWithRetry } from "@/shared/lib/refresh-session";
 import {
-  clearPersistedSession,
-  persistSession,
-  readPersistedSession,
-  readPersistedUserSnapshot,
-} from "@/shared/lib/session-persistence";
+  refreshSession,
+  refreshSessionWithRetry,
+  scheduleBackgroundRefreshRetry,
+} from "@/shared/lib/refresh-session";
+import { clearUserCache, persistUserCache, readUserCache } from "@/shared/lib/session-persistence";
 
 interface AuthContextValue {
   user: PrivateUser | null;
@@ -44,32 +43,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
   const [isLoading, setIsLoading] = useState(true);
   const isBootstrappingRef = useRef(true);
   const refreshTimerRef = useRef<number | null>(null);
+  const backgroundRetryRef = useRef<number | null>(null);
+  const applySessionRef = useRef<
+    (session: {
+      user: PrivateUser;
+      accessToken: string;
+      expiresIn?: number;
+    }) => void
+  >(() => undefined);
   const queryClient = useQueryClient();
 
-  const scheduleRefresh = useCallback(
-    (expiresIn: number) => {
-      if (refreshTimerRef.current) {
-        window.clearTimeout(refreshTimerRef.current);
-      }
-      const delayMs = Math.max(0, expiresIn * 1000 - 60_000);
-      refreshTimerRef.current = window.setTimeout(() => {
-        void refreshSession().then((session) => {
-          if (session) {
-            setAccessToken(session.accessToken);
-            setUser(session.user);
-            persistSession({
-              user: session.user,
-              accessToken: session.accessToken,
-              expiresIn: session.expiresIn ?? 900,
-            });
-            queryClient.setQueryData(queryKeys.auth.me(), session.user);
-            scheduleRefresh(session.expiresIn ?? 900);
-          }
-        });
-      }, delayMs);
-    },
-    [queryClient],
-  );
+  const clearBackgroundRetry = useCallback(() => {
+    if (backgroundRetryRef.current) {
+      window.clearTimeout(backgroundRetryRef.current);
+      backgroundRetryRef.current = null;
+    }
+  }, []);
 
   const clearRefreshTimer = useCallback(() => {
     if (refreshTimerRef.current) {
@@ -80,26 +69,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
 
   const applySession = useCallback(
     (session: { user: PrivateUser; accessToken: string; expiresIn?: number }) => {
-      setAccessToken(session.accessToken);
+      setAccessToken(session.accessToken || null);
       setUser(session.user);
-      persistSession({
-        user: session.user,
-        accessToken: session.accessToken,
-        expiresIn: session.expiresIn ?? 900,
-      });
+      persistUserCache(session.user);
       queryClient.setQueryData(queryKeys.auth.me(), session.user);
-      scheduleRefresh(session.expiresIn ?? 900);
+      clearBackgroundRetry();
+
+      clearRefreshTimer();
+      const expiresIn = session.expiresIn ?? 900;
+      const delayMs = Math.max(30_000, expiresIn * 1000 - 120_000);
+      refreshTimerRef.current = window.setTimeout(() => {
+        void refreshSession().then((next) => {
+          if (next) {
+            applySessionRef.current(next);
+            return;
+          }
+          backgroundRetryRef.current = scheduleBackgroundRefreshRetry(() => {
+            void refreshSession().then((retry) => {
+              if (retry) {
+                applySessionRef.current(retry);
+              }
+            });
+          });
+        });
+      }, delayMs);
     },
-    [queryClient, scheduleRefresh],
+    [clearBackgroundRetry, clearRefreshTimer, queryClient],
   );
+
+  applySessionRef.current = applySession;
 
   const clearSession = useCallback(() => {
     setAccessToken(null);
     setUser(null);
     clearRefreshTimer();
-    clearPersistedSession();
+    clearBackgroundRetry();
+    clearUserCache();
     queryClient.removeQueries({ queryKey: queryKeys.auth.me() });
-  }, [queryClient, clearRefreshTimer]);
+  }, [clearBackgroundRetry, clearRefreshTimer, queryClient]);
+
+  const restoreSession = useCallback(async (): Promise<boolean> => {
+    const session = await refreshSessionWithRetry();
+    if (session) {
+      applySession(session);
+      return true;
+    }
+    return false;
+  }, [applySession]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,54 +133,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
         return null;
       }
       applySession(session);
-      return session.accessToken;
+      return session.accessToken || "cookie";
     });
 
+    const cachedUser = readUserCache();
+    if (cachedUser) {
+      setUser(cachedUser);
+      queryClient.setQueryData(queryKeys.auth.me(), cachedUser);
+    }
+
     void (async () => {
-      const validSession = readPersistedSession();
-      if (validSession) {
-        setAccessToken(validSession.accessToken);
-        setUser(validSession.user);
-        queryClient.setQueryData(queryKeys.auth.me(), validSession.user);
-        setIsLoading(false);
-        isBootstrappingRef.current = false;
-        return;
-      }
-
-      const snapshot = readPersistedUserSnapshot();
-      if (snapshot) {
-        setAccessToken(snapshot.accessToken);
-        setUser(snapshot.user);
-        queryClient.setQueryData(queryKeys.auth.me(), snapshot.user);
-      }
-
-      setIsLoading(false);
-      isBootstrappingRef.current = false;
-
+      const restored = await restoreSession();
       if (cancelled) {
         return;
       }
-
-      const session = await refreshSessionWithRetry();
-      if (cancelled) {
-        return;
+      if (!restored && cachedUser) {
+        backgroundRetryRef.current = scheduleBackgroundRefreshRetry(() => {
+          void restoreSession();
+        });
       }
-
-      if (session) {
-        applySession(session);
-        return;
-      }
-
-      if (snapshot) {
+      if (!restored && !cachedUser) {
         clearSession();
       }
+      setIsLoading(false);
+      isBootstrappingRef.current = false;
     })();
+
+    const handleVisibility = (): void => {
+      if (document.visibilityState !== "visible" || cancelled) {
+        return;
+      }
+      void refreshSession().then((session) => {
+        if (session) {
+          applySession(session);
+        }
+      });
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       cancelled = true;
       clearRefreshTimer();
+      clearBackgroundRetry();
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [applySession, clearSession, clearRefreshTimer, queryClient]);
+  }, [
+    applySession,
+    clearBackgroundRetry,
+    clearRefreshTimer,
+    clearSession,
+    queryClient,
+    restoreSession,
+  ]);
 
   const signIn = useCallback(
     async (identifier: string, password: string) => {
@@ -193,15 +214,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
   const refreshUser = useCallback(
     (nextUser: PrivateUser) => {
       setUser(nextUser);
+      persistUserCache(nextUser);
       queryClient.setQueryData(queryKeys.auth.me(), nextUser);
-      const snapshot = readPersistedUserSnapshot();
-      if (snapshot) {
-        persistSession({
-          user: nextUser,
-          accessToken: snapshot.accessToken,
-          expiresIn: 900,
-        });
-      }
     },
     [queryClient],
   );

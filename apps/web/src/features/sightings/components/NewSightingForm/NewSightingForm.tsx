@@ -12,6 +12,7 @@ import { FormField } from "@/components/molecules/FormField";
 import { errorMessageFromUpload, uploadImageFile } from "@/shared/hooks/use-upload-image";
 import { cn } from "@/shared/utils/cn";
 
+import { useReverseGeocode } from "../../hooks/use-reverse-geocode";
 import { type NewSightingPayload, type NewSightingValues, newSightingSchema } from "../../schemas";
 import { type PhotoDraftItem, SortablePhotoGrid } from "../SortablePhotoGrid/SortablePhotoGrid";
 import { reorderPhotos } from "../SortablePhotoGrid/SortablePhotoGrid.logic";
@@ -51,6 +52,7 @@ export function NewSightingForm({
   const photosRef = useRef<PhotoDraftItem[]>([]);
   const [photos, setPhotos] = useState<PhotoDraftItem[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const {
@@ -76,14 +78,20 @@ export function NewSightingForm({
   const longitude = watch("longitude");
   photosRef.current = photos;
   const hasLocation = latitude !== 0 || longitude !== 0;
+  const reverseGeocode = useReverseGeocode(
+    hasLocation ? latitude : null,
+    hasLocation ? longitude : null,
+  );
   const hasPhotos = photos.length > 0;
   const allUploaded = photos.length > 0 && photos.every((photo) => photo.status === "done");
   const anyUploading = photos.some((photo) => photo.status === "uploading");
 
   const applyLocation = useCallback(
-    (lat: number, lng: number): void => {
+    (lat: number, lng: number, label?: string | null): void => {
       setValue("latitude", lat, { shouldValidate: true, shouldDirty: true });
       setValue("longitude", lng, { shouldValidate: true, shouldDirty: true });
+      setValue("street", label ?? null, { shouldDirty: true });
+      setLocationLabel(label ?? null);
       setLocating(false);
     },
     [setValue],
@@ -250,6 +258,21 @@ export function NewSightingForm({
   );
 
   useEffect(() => {
+    if (reverseGeocode.data?.label && !locationLabel) {
+      setLocationLabel(reverseGeocode.data.label);
+      setValue("street", reverseGeocode.data.label, { shouldDirty: true });
+    }
+  }, [locationLabel, reverseGeocode.data?.label, setValue]);
+
+  const locationDisplay = locating
+    ? "Obtendo localização…"
+    : hasLocation
+      ? (locationLabel ??
+        reverseGeocode.data?.label ??
+        (reverseGeocode.isLoading ? "Obtendo endereço…" : "Endereço indisponível"))
+      : "Escolher no mapa";
+
+  useEffect(() => {
     requestLocation();
   }, [requestLocation]);
 
@@ -272,6 +295,7 @@ export function NewSightingForm({
             description: values.description ?? null,
             latitude: values.latitude,
             longitude: values.longitude,
+            street: values.street ?? locationLabel,
             occurredAt: values.occurredAt,
           }),
         )}
@@ -381,6 +405,7 @@ export function NewSightingForm({
 
         <input type="hidden" {...register("latitude", { valueAsNumber: true })} />
         <input type="hidden" {...register("longitude", { valueAsNumber: true })} />
+        <input type="hidden" {...register("street")} />
         <div>
           <p className="pb-2 text-xs uppercase tracking-wider text-fg-muted">Localização</p>
           <button
@@ -391,13 +416,7 @@ export function NewSightingForm({
           >
             <span className="flex min-w-0 items-center gap-2 text-sm text-fg-primary">
               <Icon name="map" size="sm" />
-              <span className="truncate">
-                {locating
-                  ? "Obtendo localização…"
-                  : hasLocation
-                    ? `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`
-                    : "Escolher no mapa"}
-              </span>
+              <span className="truncate">{locationDisplay}</span>
             </span>
             <Icon name="chevron-right" size="sm" />
           </button>
@@ -415,7 +434,9 @@ export function NewSightingForm({
           ) : null}
           {hasLocation ? (
             <p className={`mt-1 ${styles.hint}`}>
-              O nome da rua será obtido automaticamente ao publicar.
+              {locationLabel || reverseGeocode.data?.label
+                ? "Endereço confirmado para publicação."
+                : "O endereço será obtido automaticamente se necessário."}
             </p>
           ) : null}
           {geoError && !hasLocation && !locating ? (
@@ -450,9 +471,10 @@ export function NewSightingForm({
         open={pickerOpen}
         initialLatitude={hasLocation ? latitude : null}
         initialLongitude={hasLocation ? longitude : null}
+        initialLabel={locationLabel}
         onCancel={() => setPickerOpen(false)}
-        onConfirm={(lat, lng) => {
-          applyLocation(lat, lng);
+        onConfirm={(lat, lng, label) => {
+          applyLocation(lat, lng, label);
           setPickerOpen(false);
         }}
       />

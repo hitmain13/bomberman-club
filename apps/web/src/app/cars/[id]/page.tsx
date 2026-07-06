@@ -42,7 +42,8 @@ function CarDetailContent({ id }: { id: string }): JSX.Element {
   const stageSpec = specsQuery.data?.find((spec) => spec.definition.key === "stage");
   const stageLabel = stageSpec?.valueString ?? null;
   const isOwner =
-    user !== null && myCars.data !== undefined && myCars.data.some((entry) => entry.id === id);
+    user !== null &&
+    (user.role === "ADMIN" || myCars.data?.some((entry) => entry.id === id) === true);
 
   return (
     <div className="flex flex-col gap-6">

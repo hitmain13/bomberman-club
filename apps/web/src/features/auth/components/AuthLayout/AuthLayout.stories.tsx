@@ -14,7 +14,7 @@ type Story = StoryObj<typeof AuthLayout>;
 export const Default: Story = {
   args: {
     title: "Entrar",
-    subtitle: "Bem-vindo de volta.",
+    subtitle: "Comunidade para entusiastas de carros duvidosos.",
     children: <p style={{ color: "white" }}>Form aqui</p>,
   },
 };

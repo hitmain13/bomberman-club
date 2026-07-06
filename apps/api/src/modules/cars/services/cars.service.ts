@@ -1,6 +1,8 @@
 import type { CarInput, CarResponse } from "@bomberman/types";
+import type { Role } from "@prisma/client";
 
 import { ForbiddenError, NotFoundError } from "@/common/errors";
+import { canManageCar } from "@/common/policies/car.policy";
 import { garagesService } from "@/modules/garages";
 import { uploadsCleanupRepository } from "@/modules/uploads/repositories/uploads-cleanup.repository";
 import { uploadCleanupService } from "@/modules/uploads/services/upload-cleanup.service";
@@ -8,6 +10,11 @@ import { uploadCleanupService } from "@/modules/uploads/services/upload-cleanup.
 import { CarBuilder } from "../builders/car.builder";
 import { toCarResponse } from "../mappers/cars.mapper";
 import { carsRepository } from "../repositories/cars.repository";
+
+interface CarViewer {
+  id: string;
+  role: Role;
+}
 
 export class CarsService {
   async listMine(userId: string): Promise<CarResponse[]> {
@@ -50,12 +57,12 @@ export class CarsService {
     return toCarResponse(created);
   }
 
-  async update(userId: string, id: string, input: CarInput): Promise<CarResponse> {
+  async update(viewer: CarViewer, id: string, input: CarInput): Promise<CarResponse> {
     const existing = await carsRepository.findByIdWithOwner(id);
     if (!existing) {
       throw new NotFoundError("Car", id);
     }
-    if (existing.garage.userId !== userId) {
+    if (!canManageCar(viewer, existing.garage.userId)) {
       throw new ForbiddenError("Você não pode modificar este carro.");
     }
     const updated = await carsRepository.update(id, {
@@ -76,12 +83,12 @@ export class CarsService {
     return toCarResponse(updated);
   }
 
-  async remove(userId: string, id: string): Promise<void> {
+  async remove(viewer: CarViewer, id: string): Promise<void> {
     const existing = await carsRepository.findByIdWithOwner(id);
     if (!existing) {
       throw new NotFoundError("Car", id);
     }
-    if (existing.garage.userId !== userId) {
+    if (!canManageCar(viewer, existing.garage.userId)) {
       throw new ForbiddenError("Você não pode remover este carro.");
     }
     const uploadIds = await uploadsCleanupRepository.collectCarUploadIds(id);

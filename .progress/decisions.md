@@ -17,3 +17,5 @@ Decisões arquiteturais detalhadas vivem em `docs/architecture/adr/`. Este arqui
 | 0011 | Sessão resiliente (`refreshSessionWithRetry` + snapshot) e filtros na URL (`useFilterParams`) |
 | 0012 | Bootstrap de auth não bloqueante + proxy same-origin `/api` para cookies first-party |
 | 0013 | Forward geocode search no `LocationPicker` (Nominatim, throttle, cache) |
+| 0014 | Melhorias V2: reverse geocode frontend, pointer reorder, compressão WebP, RBAC carros admin, validação uploads sighting |
+| 0015 | Sessão cookie-first (`bc_access` + `bc_refresh`), grace period refresh, bootstrap resiliente |

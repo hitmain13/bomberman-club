@@ -1,10 +1,23 @@
-const MAX_EDGE = 1600;
-const DEFAULT_QUALITY = 0.78;
+const MAX_EDGE = 1400;
+const DEFAULT_QUALITY = 0.72;
+const MIN_DIMENSION_REDUCTION = 0.9;
 
 export interface CompressImageResult {
   file: File;
   originalSize: number;
   compressedSize: number;
+}
+
+function shouldUseCompressed(
+  originalSize: number,
+  blob: Blob,
+  originalMaxEdge: number,
+  outputMaxEdge: number,
+): boolean {
+  if (blob.size < originalSize) {
+    return true;
+  }
+  return outputMaxEdge < originalMaxEdge * MIN_DIMENSION_REDUCTION;
 }
 
 export async function compressImage(file: File): Promise<CompressImageResult> {
@@ -15,9 +28,11 @@ export async function compressImage(file: File): Promise<CompressImageResult> {
 
   try {
     const bitmap = await createImageBitmap(file);
-    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const originalMaxEdge = Math.max(bitmap.width, bitmap.height);
+    const scale = Math.min(1, MAX_EDGE / originalMaxEdge);
     const width = Math.round(bitmap.width * scale);
     const height = Math.round(bitmap.height * scale);
+    const outputMaxEdge = Math.max(width, height);
 
     const canvas = document.createElement("canvas");
     canvas.width = width;
@@ -31,17 +46,16 @@ export async function compressImage(file: File): Promise<CompressImageResult> {
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
 
-    const outputType =
-      file.type === "image/png" || file.type === "image/jpeg" ? "image/webp" : file.type;
+    const outputType = "image/webp";
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, outputType, DEFAULT_QUALITY);
     });
 
-    if (!blob || blob.size >= originalSize) {
+    if (!blob || !shouldUseCompressed(originalSize, blob, originalMaxEdge, outputMaxEdge)) {
       return { file, originalSize, compressedSize: originalSize };
     }
 
-    const extension = outputType.split("/")[1] ?? "jpg";
+    const extension = "webp";
     const compressed = new File([blob], file.name.replace(/\.[^.]+$/, `.${extension}`), {
       type: outputType,
       lastModified: file.lastModified,

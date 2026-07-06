@@ -7,7 +7,7 @@ export default function LoginPage(): JSX.Element {
   return (
     <AuthLayout
       title="Bomberman Club"
-      subtitle="Bem-vindo de volta."
+      subtitle="Comunidade para entusiastas de carros duvidosos."
       footer={
         <span>
           Não tem uma conta?{" "}

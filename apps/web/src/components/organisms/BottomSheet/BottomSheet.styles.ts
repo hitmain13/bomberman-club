@@ -7,7 +7,7 @@ export const styles = {
   sheetConstrained: "left-1/2 w-full max-w-md -translate-x-1/2",
   sheetFullWidth: "inset-x-0",
   header: "flex items-center justify-between",
-  title: "text-base font-semibold",
+  title: "text-sm font-medium text-fg-secondary",
   close: "text-sm text-fg-secondary hover:text-fg-primary",
   body: "flex flex-col gap-3 overflow-y-auto",
   footer: "flex gap-2",

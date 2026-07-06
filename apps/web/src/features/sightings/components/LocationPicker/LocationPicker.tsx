@@ -8,7 +8,7 @@ import { Button } from "@/components/atoms/Button";
 import { Icon } from "@/components/atoms/Icon";
 import { Input } from "@/components/atoms/Input";
 import { BottomSheet } from "@/components/organisms/BottomSheet";
-import { useGeoSearch } from "@/features/sightings";
+import { useGeoSearch, useReverseGeocode } from "@/features/sightings";
 
 import { styles } from "./LocationPicker.styles";
 import type { LocationPickerProps } from "./LocationPicker.types";
@@ -30,17 +30,11 @@ const meIcon = L.divIcon({
   html: "",
 });
 
-function formatCoord(value: number | null): string {
-  if (value === null || Number.isNaN(value)) {
-    return "—";
-  }
-  return value.toFixed(5);
-}
-
 export function LocationPicker({
   open,
   initialLatitude,
   initialLongitude,
+  initialLabel = null,
   onCancel,
   onConfirm,
 }: LocationPickerProps): JSX.Element | null {
@@ -48,15 +42,35 @@ export function LocationPicker({
   const mapRef = useRef<L.Map | null>(null);
   const pickerMarkerRef = useRef<L.Marker | null>(null);
   const meMarkerRef = useRef<L.Marker | null>(null);
-  const [selected, setSelected] = useState<{ lat: number; lng: number } | null>(() => {
-    if (initialLatitude !== null && initialLongitude !== null) {
-      return { lat: initialLatitude, lng: initialLongitude };
-    }
-    return null;
-  });
-  const [searchQuery, setSearchQuery] = useState("");
+  const selectedRef = useRef<{ lat: number; lng: number } | null>(
+    initialLatitude !== null && initialLongitude !== null
+      ? { lat: initialLatitude, lng: initialLongitude }
+      : null,
+  );
+  const [selected, setSelected] = useState<{ lat: number; lng: number } | null>(
+    selectedRef.current,
+  );
+  const [locationLabel, setLocationLabel] = useState<string | null>(initialLabel);
+  const [searchQuery, setSearchQuery] = useState(initialLabel ?? "");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const search = useGeoSearch(debouncedQuery);
+  const reverseGeocode = useReverseGeocode(selected?.lat ?? null, selected?.lng ?? null);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setSearchQuery(initialLabel ?? "");
+    setLocationLabel(initialLabel);
+    setSuggestionsOpen(false);
+    const nextSelected =
+      initialLatitude !== null && initialLongitude !== null
+        ? { lat: initialLatitude, lng: initialLongitude }
+        : null;
+    selectedRef.current = nextSelected;
+    setSelected(nextSelected);
+  }, [open, initialLatitude, initialLongitude, initialLabel]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -66,11 +80,24 @@ export function LocationPicker({
   }, [searchQuery]);
 
   useEffect(() => {
+    if (debouncedQuery.length >= 3) {
+      setSuggestionsOpen(true);
+    }
+  }, [debouncedQuery]);
+
+  useEffect(() => {
+    if (reverseGeocode.data?.label) {
+      setLocationLabel(reverseGeocode.data.label);
+    }
+  }, [reverseGeocode.data?.label]);
+
+  useEffect(() => {
     if (!open || !containerRef.current || mapRef.current) {
       return;
     }
-    const startCenter: [number, number] =
-      selected !== null ? [selected.lat, selected.lng] : FALLBACK_CENTER;
+    const startCenter: [number, number] = selectedRef.current
+      ? [selectedRef.current.lat, selectedRef.current.lng]
+      : FALLBACK_CENTER;
     const map = L.map(containerRef.current, {
       center: startCenter,
       zoom: DEFAULT_ZOOM,
@@ -85,11 +112,17 @@ export function LocationPicker({
     pickerMarkerRef.current = marker;
     marker.on("dragend", () => {
       const pos = marker.getLatLng();
-      setSelected({ lat: pos.lat, lng: pos.lng });
+      const next = { lat: pos.lat, lng: pos.lng };
+      selectedRef.current = next;
+      setSelected(next);
+      setLocationLabel(null);
     });
     map.on("click", (event: L.LeafletMouseEvent) => {
       marker.setLatLng(event.latlng);
-      setSelected({ lat: event.latlng.lat, lng: event.latlng.lng });
+      const next = { lat: event.latlng.lat, lng: event.latlng.lng };
+      selectedRef.current = next;
+      setSelected(next);
+      setLocationLabel(null);
     });
 
     mapRef.current = map;
@@ -107,10 +140,13 @@ export function LocationPicker({
           } else {
             meMarkerRef.current = L.marker(latlng, { icon: meIcon, interactive: false }).addTo(map);
           }
-          if (selected === null) {
+          if (selectedRef.current === null) {
             marker.setLatLng(latlng);
             map.setView(latlng, DEFAULT_ZOOM);
-            setSelected({ lat: latlng[0], lng: latlng[1] });
+            const next = { lat: latlng[0], lng: latlng[1] };
+            selectedRef.current = next;
+            setSelected(next);
+            setLocationLabel(null);
           }
         },
         undefined,
@@ -124,7 +160,17 @@ export function LocationPicker({
       pickerMarkerRef.current = null;
       meMarkerRef.current = null;
     };
-  }, [open, selected]);
+  }, [open]);
+
+  const updateMapPosition = (lat: number, lng: number): void => {
+    const latlng: [number, number] = [lat, lng];
+    pickerMarkerRef.current?.setLatLng(latlng);
+    mapRef.current?.setView(latlng, DEFAULT_ZOOM);
+    const next = { lat, lng };
+    selectedRef.current = next;
+    setSelected(next);
+    setLocationLabel(null);
+  };
 
   const handleUseMyLocation = (): void => {
     if (typeof navigator === "undefined" || !navigator.geolocation) {
@@ -132,22 +178,28 @@ export function LocationPicker({
     }
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const latlng: [number, number] = [position.coords.latitude, position.coords.longitude];
-        pickerMarkerRef.current?.setLatLng(latlng);
-        mapRef.current?.setView(latlng, DEFAULT_ZOOM);
-        setSelected({ lat: latlng[0], lng: latlng[1] });
+        updateMapPosition(position.coords.latitude, position.coords.longitude);
       },
       undefined,
       { enableHighAccuracy: true, timeout: 5_000 },
     );
   };
 
-  const handleSelectResult = (result: { latitude: number; longitude: number }): void => {
-    const latlng: [number, number] = [result.latitude, result.longitude];
-    pickerMarkerRef.current?.setLatLng(latlng);
-    mapRef.current?.setView(latlng, DEFAULT_ZOOM);
-    setSelected({ lat: result.latitude, lng: result.longitude });
+  const handleSelectResult = (result: {
+    label: string;
+    latitude: number;
+    longitude: number;
+  }): void => {
+    setSearchQuery(result.label);
+    setLocationLabel(result.label);
+    setSuggestionsOpen(false);
+    updateMapPosition(result.latitude, result.longitude);
   };
+
+  const resolvedLabel =
+    locationLabel ??
+    (reverseGeocode.isLoading ? "Obtendo endereço…" : null) ??
+    (selected ? "Endereço indisponível" : "Selecione um ponto no mapa");
 
   return (
     <BottomSheet
@@ -170,7 +222,11 @@ export function LocationPicker({
             disabled={selected === null}
             onClick={() => {
               if (selected !== null) {
-                onConfirm(selected.lat, selected.lng);
+                onConfirm(
+                  selected.lat,
+                  selected.lng,
+                  locationLabel ?? (searchQuery.trim() || null),
+                );
               }
             }}
           >
@@ -184,14 +240,22 @@ export function LocationPicker({
           <Input
             placeholder="Buscar rua, bairro ou cidade"
             value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
+            onChange={(event) => {
+              setSearchQuery(event.target.value);
+              setSuggestionsOpen(true);
+            }}
+            onFocus={() => {
+              if (searchQuery.trim().length >= 3) {
+                setSuggestionsOpen(true);
+              }
+            }}
             className="pl-10"
           />
           <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
         </div>
-        {search.isLoading ? (
+        {suggestionsOpen && search.isLoading ? (
           <p className="text-xs text-fg-muted">Buscando…</p>
-        ) : search.data && search.data.results.length > 0 ? (
+        ) : suggestionsOpen && search.data && search.data.results.length > 0 ? (
           <ul className="flex flex-col gap-1">
             {search.data.results.map((result) => (
               <li key={result.id}>
@@ -209,9 +273,7 @@ export function LocationPicker({
         <div ref={containerRef} className={styles.mapWrap} />
         <div className={styles.hint}>
           <span>Toque ou arraste o pin</span>
-          <span className={styles.hintCoord}>
-            {formatCoord(selected?.lat ?? null)}, {formatCoord(selected?.lng ?? null)}
-          </span>
+          <span className={styles.hintAddress}>{resolvedLabel}</span>
         </div>
       </div>
     </BottomSheet>

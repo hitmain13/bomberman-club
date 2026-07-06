@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 
 import type { Role } from "@prisma/client";
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT, decodeJwt, jwtVerify } from "jose";
 
 import { UnauthorizedError } from "@/common/errors";
 import { env } from "@/config/env";
@@ -62,4 +62,12 @@ export function issueRefreshToken(): IssuedRefreshToken {
 
 export function hashRefreshToken(token: string): string {
   return createHash("sha256").update(`${env.JWT_REFRESH_SECRET}:${token}`).digest("hex");
+}
+
+export function getAccessTokenExpiresIn(token: string): number {
+  const payload = decodeJwt(token);
+  if (typeof payload.exp !== "number") {
+    return env.JWT_ACCESS_TTL_SECONDS;
+  }
+  return Math.max(0, payload.exp - Math.floor(Date.now() / 1000));
 }

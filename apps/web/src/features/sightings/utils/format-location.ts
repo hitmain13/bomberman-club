@@ -1,5 +1,7 @@
 import type { SightingResponse } from "@bomberman/types";
 
+const FALLBACK_LABEL = "Endereço indisponível";
+
 export function formatSightingLocation(
   sighting: Pick<SightingResponse, "street" | "locationLabel" | "latitude" | "longitude">,
 ): string {
@@ -7,5 +9,5 @@ export function formatSightingLocation(
   if (label) {
     return label;
   }
-  return `${sighting.latitude.toFixed(5)}, ${sighting.longitude.toFixed(5)}`;
+  return FALLBACK_LABEL;
 }

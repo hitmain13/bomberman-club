@@ -16,8 +16,8 @@ describe("formatSightingLocation", () => {
     );
   });
 
-  it("falls back to locationLabel then coordinates", () => {
+  it("falls back to locationLabel then friendly placeholder", () => {
     expect(formatSightingLocation({ ...base, locationLabel: "Rua Augusta" })).toBe("Rua Augusta");
-    expect(formatSightingLocation(base)).toBe("-23.55291, -46.69646");
+    expect(formatSightingLocation(base)).toBe("Endereço indisponível");
   });
 });

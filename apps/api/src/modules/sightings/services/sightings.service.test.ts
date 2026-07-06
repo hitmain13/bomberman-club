@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SightingInput } from "@bomberman/types";
 
+import { uploadsRepository } from "@/modules/uploads/repositories/uploads.repository";
 import { sightingsRepository } from "../repositories/sightings.repository";
 import { SightingsService } from "./sightings.service";
 
@@ -13,6 +14,13 @@ vi.mock("../repositories/sightings.repository", () => ({
     list: vi.fn(),
     listByUsername: vi.fn(),
     remove: vi.fn(),
+    isCoverUploadInUse: vi.fn(),
+  },
+}));
+
+vi.mock("@/modules/uploads/repositories/uploads.repository", () => ({
+  uploadsRepository: {
+    findManyByIds: vi.fn(),
   },
 }));
 
@@ -29,6 +37,10 @@ describe("SightingsService.create", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(uploadsRepository.findManyByIds).mockResolvedValue([
+      { id: "upload_1", ownerId: "user_1" } as never,
+    ]);
+    vi.mocked(sightingsRepository.isCoverUploadInUse).mockResolvedValue(false);
   });
 
   it("persists street from reverse geocode when absent in input", async () => {

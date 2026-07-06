@@ -72,9 +72,47 @@ describe("AuthService ban enforcement", () => {
   it("rejects refresh when session token is missing", async () => {
     const authRepository = await import("../repositories/auth.repository");
     vi.spyOn(authRepository.authRepository, "findActiveRefreshToken").mockResolvedValue(null);
+    vi.spyOn(authRepository.authRepository, "findRecentlyRevokedRefreshToken").mockResolvedValue(
+      null,
+    );
 
     await expect(service.refresh("missing", { userAgent: null, ip: null })).rejects.toBeInstanceOf(
       UnauthorizedError,
     );
+  });
+
+  it("accepts recently rotated refresh tokens within grace window", async () => {
+    const authRepository = await import("../repositories/auth.repository");
+    vi.spyOn(authRepository.authRepository, "findActiveRefreshToken").mockResolvedValue(null);
+    vi.spyOn(authRepository.authRepository, "findRecentlyRevokedRefreshToken").mockResolvedValue({
+      id: "rt_old",
+      userId: "user_1",
+      tokenHash: "hash",
+      expiresAt: new Date(Date.now() + 60_000),
+      revokedAt: new Date(),
+      userAgent: null,
+      ip: null,
+      createdAt: new Date(),
+    });
+    vi.spyOn(authRepository.authRepository, "findUserById").mockResolvedValue({
+      id: "user_1",
+      username: "matsu",
+      email: "m@example.com",
+      passwordHash: "hash",
+      role: "USER",
+      bannedAt: null,
+      bio: null,
+      city: null,
+      avatarUploadId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    vi.spyOn(authRepository.authRepository, "createRefreshToken").mockResolvedValue({} as never);
+
+    const usersRepository = await import("@/modules/users/repositories/users.repository");
+    vi.spyOn(usersRepository.usersRepository, "findAvatarUrl").mockResolvedValue(null);
+
+    const session = await service.refresh("rotated-token", { userAgent: null, ip: null });
+    expect(session.response.user.username).toBe("matsu");
   });
 });

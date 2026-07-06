@@ -23,29 +23,29 @@ export const carsController = new Elysia({ prefix: "/cars" })
   .patch("/:id", ({ currentUser, params, body }) => {
     const user = requireAuth(currentUser);
     const input = parseOrThrow(carInputSchema, body);
-    return carsService.update(user.id, params.id, input);
+    return carsService.update(user, params.id, input);
   })
   .delete("/:id", async ({ currentUser, params }) => {
     const user = requireAuth(currentUser);
-    await carsService.remove(user.id, params.id);
+    await carsService.remove(user, params.id);
     return { ok: true };
   })
   .get("/:id/parts", ({ params }) => carPartsService.list(params.id))
   .post("/:id/parts", ({ currentUser, params, body }) => {
     const user = requireAuth(currentUser);
     const input = parseOrThrow(carPartInputSchema, body);
-    return carPartsService.add(params.id, user.id, input);
+    return carPartsService.add(params.id, user, input);
   })
   .delete("/:id/parts/:carPartId", async ({ currentUser, params }) => {
     const user = requireAuth(currentUser);
-    await carPartsService.remove(params.id, user.id, params.carPartId);
+    await carPartsService.remove(params.id, user, params.carPartId);
     return { ok: true };
   })
   .get("/:id/specs", ({ params }) => carSpecsService.list(params.id))
   .put("/:id/specs", ({ currentUser, params, body }) => {
     const user = requireAuth(currentUser);
     const input = parseOrThrow(specValueInputSchema, body);
-    return carSpecsService.set(params.id, user.id, input);
+    return carSpecsService.set(params.id, user, input);
   });
 
 export const userCarsController = new Elysia({ prefix: "/users" }).get(

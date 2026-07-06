@@ -19,6 +19,13 @@ export class UploadsRepository {
     return prisma.upload.findUnique({ where: { id } });
   }
 
+  findManyByIds(ids: string[]): Promise<Upload[]> {
+    if (ids.length === 0) {
+      return Promise.resolve([]);
+    }
+    return prisma.upload.findMany({ where: { id: { in: ids } } });
+  }
+
   remove(id: string): Promise<Upload> {
     return prisma.upload.delete({ where: { id } });
   }

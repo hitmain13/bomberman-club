@@ -5,6 +5,7 @@ const refreshMock = vi.fn();
 vi.mock("@/shared/lib/api-client", () => ({
   apiClient: {
     auth: {
+      session: () => refreshMock(),
       refresh: () => refreshMock(),
     },
   },

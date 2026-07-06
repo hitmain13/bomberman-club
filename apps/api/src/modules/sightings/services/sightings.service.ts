@@ -7,11 +7,12 @@ import {
 } from "@bomberman/types";
 import type { TargetType } from "@prisma/client";
 
-import { ForbiddenError, NotFoundError } from "@/common/errors";
+import { ForbiddenError, NotFoundError, ValidationError } from "@/common/errors";
 import { canManageSighting } from "@/common/policies/sighting.policy";
 import { commentsRepository } from "@/modules/social/repositories/comments.repository";
 import { likesRepository } from "@/modules/social/repositories/likes.repository";
 import { uploadsCleanupRepository } from "@/modules/uploads/repositories/uploads-cleanup.repository";
+import { uploadsRepository } from "@/modules/uploads/repositories/uploads.repository";
 import { uploadCleanupService } from "@/modules/uploads/services/upload-cleanup.service";
 import { getReverseGeocodeService } from "@/shared/geo/reverse-geocode";
 
@@ -30,6 +31,38 @@ interface ListParams {
 }
 
 const SIGHTING_TARGET: TargetType = "SIGHTING";
+
+async function validateUploadIds(userId: string, uploadIds: string[]): Promise<string[]> {
+  const uniqueIds = [...new Set(uploadIds.filter(Boolean))];
+  if (uniqueIds.length === 0) {
+    throw new ValidationError("Informe ao menos uma foto.");
+  }
+
+  const uploads = await uploadsRepository.findManyByIds(uniqueIds);
+  if (uploads.length !== uniqueIds.length) {
+    throw new ValidationError("Uma ou mais fotos não foram encontradas. Envie novamente.");
+  }
+
+  const foreignUpload = uploads.find((upload) => upload.ownerId !== userId);
+  if (foreignUpload) {
+    throw new ForbiddenError("Você não pode usar fotos de outro usuário.");
+  }
+
+  const coverInUse = await sightingsRepository.isCoverUploadInUse(uniqueIds);
+  if (coverInUse) {
+    throw new ValidationError("Uma das fotos já está vinculada a outro flagrado.");
+  }
+
+  return uniqueIds;
+}
+
+function parseOccurredAt(value: string): Date {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new ValidationError("Data e hora inválidas.");
+  }
+  return parsed;
+}
 
 export class SightingsService {
   private async buildStats(
@@ -93,7 +126,11 @@ export class SightingsService {
   }
 
   async create(userId: string, input: SightingInput): Promise<SightingResponse> {
-    const uploadIds = resolveUploadIds(input);
+    const uploadIds = await validateUploadIds(userId, resolveUploadIds(input));
+    const coverUploadId = uploadIds[0];
+    if (!coverUploadId) {
+      throw new ValidationError("Informe ao menos uma foto.");
+    }
     let street = input.street ?? input.locationLabel ?? null;
     if (!street) {
       street = await getReverseGeocodeService().resolve(input.latitude, input.longitude);
@@ -101,7 +138,7 @@ export class SightingsService {
 
     const created = await sightingsRepository.create({
       userId,
-      uploadId: uploadIds[0] ?? "",
+      uploadId: coverUploadId,
       uploadIds,
       title: input.title,
       description: input.description ?? null,
@@ -109,7 +146,7 @@ export class SightingsService {
       longitude: input.longitude,
       street,
       locationLabel: street,
-      occurredAt: new Date(input.occurredAt),
+      occurredAt: parseOccurredAt(input.occurredAt),
     });
     return toSightingResponse(created, {
       likeCount: 0,
@@ -150,7 +187,7 @@ export class SightingsService {
       ...(input.latitude !== undefined ? { latitude: input.latitude } : {}),
       ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
       ...(street !== undefined ? { street, locationLabel: street } : {}),
-      ...(input.occurredAt !== undefined ? { occurredAt: new Date(input.occurredAt) } : {}),
+      ...(input.occurredAt !== undefined ? { occurredAt: parseOccurredAt(input.occurredAt) } : {}),
       ...(uploadIds ? { uploadId: uploadIds[0], uploadIds } : {}),
     });
 

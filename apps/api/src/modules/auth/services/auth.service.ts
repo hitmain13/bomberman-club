@@ -53,6 +53,8 @@ async function buildSession(
   };
 }
 
+const REFRESH_REUSE_GRACE_MS = 60_000;
+
 export class AuthService {
   async register(input: RegisterInput, context: ClientContext): Promise<IssuedSession> {
     const username = input.username.toLowerCase();
@@ -90,15 +92,34 @@ export class AuthService {
     return buildSession(user, context);
   }
 
+  async getActiveUser(userId: string) {
+    const user = await authRepository.findUserById(userId);
+    if (!user) {
+      throw new UnauthorizedError();
+    }
+    assertNotBanned(user);
+    return user;
+  }
+
   async refresh(rawToken: string, context: ClientContext): Promise<IssuedSession> {
     const tokenHash = hashRefreshToken(rawToken);
     const existing = await authRepository.findActiveRefreshToken(tokenHash);
-    if (!existing) {
-      throw new UnauthorizedError("Sessão expirada.");
+    if (existing) {
+      await authRepository.revokeRefreshToken(existing.id);
+      const user = await authRepository.findUserById(existing.userId);
+      return buildSession(user, context);
     }
-    await authRepository.revokeRefreshToken(existing.id);
-    const user = await authRepository.findUserById(existing.userId);
-    return buildSession(user, context);
+
+    const reused = await authRepository.findRecentlyRevokedRefreshToken(
+      tokenHash,
+      REFRESH_REUSE_GRACE_MS,
+    );
+    if (reused) {
+      const user = await authRepository.findUserById(reused.userId);
+      return buildSession(user, context);
+    }
+
+    throw new UnauthorizedError("Sessão expirada.");
   }
 
   async logout(rawToken: string | null): Promise<void> {

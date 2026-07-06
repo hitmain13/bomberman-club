@@ -1,16 +1,25 @@
 import type { CarPartInput, CarPartResponse } from "@bomberman/types";
-import type { Part } from "@prisma/client";
+import type { Part, Role } from "@prisma/client";
 
 import { ForbiddenError, NotFoundError, ValidationError } from "@/common/errors";
+import { canManageCar } from "@/common/policies/car.policy";
 import { catalogRepository } from "@/modules/catalog";
 
 import { toCarPartResponse } from "../mappers/car-parts.mapper";
 import { carPartsRepository } from "../repositories/car-parts.repository";
 import { carsRepository } from "../repositories/cars.repository";
 
-async function ensureCarOwnership(carId: string, userId: string): Promise<void> {
-  const car = await carsRepository.findByIdForOwner(carId, userId);
+interface CarViewer {
+  id: string;
+  role: Role;
+}
+
+async function ensureCarAccess(carId: string, viewer: CarViewer): Promise<void> {
+  const car = await carsRepository.findByIdWithOwner(carId);
   if (!car) {
+    throw new NotFoundError("Car", carId);
+  }
+  if (!canManageCar(viewer, car.garage.userId)) {
     throw new ForbiddenError("Você não pode modificar este carro.");
   }
 }
@@ -49,8 +58,8 @@ export class CarPartsService {
     return parts.map(toCarPartResponse);
   }
 
-  async add(carId: string, userId: string, input: CarPartInput): Promise<CarPartResponse> {
-    await ensureCarOwnership(carId, userId);
+  async add(carId: string, viewer: CarViewer, input: CarPartInput): Promise<CarPartResponse> {
+    await ensureCarAccess(carId, viewer);
     const part = await resolvePart(input);
     const created = await carPartsRepository.add({
       carId,
@@ -61,8 +70,8 @@ export class CarPartsService {
     return toCarPartResponse(created);
   }
 
-  async remove(carId: string, userId: string, carPartId: string): Promise<void> {
-    await ensureCarOwnership(carId, userId);
+  async remove(carId: string, viewer: CarViewer, carPartId: string): Promise<void> {
+    await ensureCarAccess(carId, viewer);
     const existing = await carPartsRepository.findById(carPartId);
     if (!existing || existing.carId !== carId) {
       throw new NotFoundError("CarPart", carPartId);

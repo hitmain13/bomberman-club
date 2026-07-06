@@ -19,6 +19,7 @@ export const newSightingSchema = z.object({
   description: z.string().max(500).nullable().optional(),
   latitude: latitudeSchema,
   longitude: longitudeSchema,
+  street: z.string().max(200).nullable().optional(),
   occurredAt: localDatetimeSchema,
 });
 

@@ -47,7 +47,17 @@ export const sightingInputSchema = z
     street: z.string().max(200).nullable().optional(),
     /** @deprecated Prefer `street`; kept for backward compatibility with older clients. */
     locationLabel: z.string().max(200).nullable().optional(),
-    occurredAt: z.string().datetime(),
+    occurredAt: z
+      .string()
+      .min(1)
+      .transform((value) => {
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+          return value;
+        }
+        return parsed.toISOString();
+      })
+      .pipe(z.string().datetime()),
   })
   .superRefine((value, ctx) => {
     const ids = resolveUploadIds(value);

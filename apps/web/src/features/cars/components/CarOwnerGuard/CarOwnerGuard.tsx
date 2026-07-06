@@ -16,7 +16,12 @@ export function CarOwnerGuard({ carId, children }: CarOwnerGuardProps): JSX.Elem
   if (myCars.isLoading) {
     return <StatePanel kind="loading" />;
   }
-  if (!user || !myCars.data?.some((car) => car.id === carId)) {
+
+  const canManage =
+    user !== null &&
+    (user.role === "ADMIN" || myCars.data?.some((car) => car.id === carId) === true);
+
+  if (!canManage) {
     return (
       <StatePanel kind="error" description="Você não tem permissão para modificar este carro." />
     );
