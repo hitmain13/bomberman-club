@@ -45,6 +45,9 @@ export const queryKeys = {
     follow: (username: string) => ["social", "follow", username] as const,
     notifications: () => ["social", "notifications"] as const,
   },
+  geo: {
+    search: (q: string) => ["geo", "search", q] as const,
+  },
   discovery: {
     feed: (scope: FeedScope) => ["discovery", "feed", scope] as const,
     ranking: (metric: RankingMetric) => ["discovery", "ranking", metric] as const,

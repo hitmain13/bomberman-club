@@ -11,6 +11,7 @@ export * from "./schemas/social";
 export * from "./schemas/notification";
 export * from "./schemas/upload";
 export * from "./schemas/discovery";
+export * from "./schemas/geo";
 export * from "./utils/car-metrics";
 export * from "./utils/spec-value";
 export * from "./utils/period";

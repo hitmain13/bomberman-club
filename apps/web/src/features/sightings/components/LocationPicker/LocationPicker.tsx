@@ -6,7 +6,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/atoms/Button";
 import { Icon } from "@/components/atoms/Icon";
+import { Input } from "@/components/atoms/Input";
 import { BottomSheet } from "@/components/organisms/BottomSheet";
+import { useGeoSearch } from "@/features/sightings";
 
 import { styles } from "./LocationPicker.styles";
 import type { LocationPickerProps } from "./LocationPicker.types";
@@ -52,6 +54,16 @@ export function LocationPicker({
     }
     return null;
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const search = useGeoSearch(debouncedQuery);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedQuery(searchQuery.trim());
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (!open || !containerRef.current || mapRef.current) {
@@ -130,6 +142,13 @@ export function LocationPicker({
     );
   };
 
+  const handleSelectResult = (result: { latitude: number; longitude: number }): void => {
+    const latlng: [number, number] = [result.latitude, result.longitude];
+    pickerMarkerRef.current?.setLatLng(latlng);
+    mapRef.current?.setView(latlng, DEFAULT_ZOOM);
+    setSelected({ lat: result.latitude, lng: result.longitude });
+  };
+
   return (
     <BottomSheet
       open={open}
@@ -160,12 +179,40 @@ export function LocationPicker({
         </>
       }
     >
-      <div ref={containerRef} className={styles.mapWrap} />
-      <div className={styles.hint}>
-        <span>Toque ou arraste o pin</span>
-        <span className={styles.hintCoord}>
-          {formatCoord(selected?.lat ?? null)}, {formatCoord(selected?.lng ?? null)}
-        </span>
+      <div className="flex flex-col gap-3">
+        <div className="relative">
+          <Input
+            placeholder="Buscar rua, bairro ou cidade"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="pl-10"
+          />
+          <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
+        </div>
+        {search.isLoading ? (
+          <p className="text-xs text-fg-muted">Buscando…</p>
+        ) : search.data && search.data.results.length > 0 ? (
+          <ul className="flex flex-col gap-1">
+            {search.data.results.map((result) => (
+              <li key={result.id}>
+                <button
+                  type="button"
+                  onClick={() => handleSelectResult(result)}
+                  className="w-full rounded-md px-3 py-2 text-left text-sm text-fg-primary hover:bg-bg-muted"
+                >
+                  {result.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <div ref={containerRef} className={styles.mapWrap} />
+        <div className={styles.hint}>
+          <span>Toque ou arraste o pin</span>
+          <span className={styles.hintCoord}>
+            {formatCoord(selected?.lat ?? null)}, {formatCoord(selected?.lng ?? null)}
+          </span>
+        </div>
       </div>
     </BottomSheet>
   );
