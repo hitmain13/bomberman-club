@@ -9,7 +9,7 @@ import { Button } from "@/components/atoms/Button";
 import { buttonBase, buttonSizes, buttonVariants } from "@/components/atoms/Button/Button.styles";
 import { Icon } from "@/components/atoms/Icon";
 import { FormField } from "@/components/molecules/FormField";
-import { uploadImageFile } from "@/shared/hooks/use-upload-image";
+import { errorMessageFromUpload, uploadImageFile } from "@/shared/hooks/use-upload-image";
 import { cn } from "@/shared/utils/cn";
 
 import { type NewSightingPayload, type NewSightingValues, newSightingSchema } from "../../schemas";
@@ -154,14 +154,14 @@ export function NewSightingForm({
             return next;
           });
         })
-        .catch(() => {
+        .catch((error) => {
           setPhotos((current) =>
             current.map((photo) =>
               photo.localId === localId
                 ? {
                     ...photo,
                     status: "error" as const,
-                    errorMessage: "Não foi possível enviar.",
+                    errorMessage: errorMessageFromUpload(error),
                   }
                 : photo,
             ),
@@ -184,6 +184,7 @@ export function NewSightingForm({
       const optimistic = batch.map((file) => ({
         localId: createLocalId(),
         preview: URL.createObjectURL(file),
+        file,
         uploadId: null,
         status: "uploading" as const,
       }));
@@ -228,6 +229,25 @@ export function NewSightingForm({
       return next;
     });
   };
+
+  const handleRetryUpload = useCallback(
+    (localId: string): void => {
+      setPhotos((current) =>
+        current.map((photo) => {
+          if (photo.localId !== localId) {
+            return photo;
+          }
+          const { errorMessage: _, ...rest } = photo;
+          return { ...rest, status: "uploading" as const };
+        }),
+      );
+      const photo = photosRef.current.find((entry) => entry.localId === localId);
+      if (photo) {
+        enqueueUpload(photo.file, localId);
+      }
+    },
+    [enqueueUpload],
+  );
 
   useEffect(() => {
     requestLocation();
@@ -277,7 +297,7 @@ export function NewSightingForm({
               <input
                 ref={cameraInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/*"
+                accept="image/jpeg,image/png,image/webp"
                 capture="environment"
                 aria-label="Abrir câmera"
                 className={styles.photoInput}
@@ -296,7 +316,7 @@ export function NewSightingForm({
               <input
                 ref={galleryInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/*"
+                accept="image/jpeg,image/png,image/webp"
                 multiple
                 aria-label="Escolher da galeria"
                 className={styles.photoInput}
@@ -306,7 +326,12 @@ export function NewSightingForm({
           </div>
         ) : (
           <>
-            <SortablePhotoGrid photos={photos} onReorder={handleReorder} onRemove={removePhoto} />
+            <SortablePhotoGrid
+              photos={photos}
+              onReorder={handleReorder}
+              onRemove={removePhoto}
+              onRetry={handleRetryUpload}
+            />
             {photos.length > 1 ? (
               <p className={styles.hint}>Arraste para reordenar. A primeira foto é a capa.</p>
             ) : null}

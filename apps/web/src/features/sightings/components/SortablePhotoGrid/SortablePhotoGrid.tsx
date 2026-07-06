@@ -9,6 +9,7 @@ import { cn } from "@/shared/utils/cn";
 export interface PhotoDraftItem {
   localId: string;
   preview: string;
+  file: File;
   uploadId: string | null;
   status: "uploading" | "done" | "error";
   errorMessage?: string;
@@ -18,6 +19,7 @@ export interface SortablePhotoGridProps {
   photos: PhotoDraftItem[];
   onReorder: (fromIndex: number, toIndex: number) => void;
   onRemove: (localId: string) => void;
+  onRetry?: (localId: string) => void;
   className?: string;
 }
 
@@ -25,6 +27,7 @@ export function SortablePhotoGrid({
   photos,
   onReorder,
   onRemove,
+  onRetry,
   className,
 }: SortablePhotoGridProps): JSX.Element {
   const dragIndex = useRef<number | null>(null);
@@ -63,8 +66,17 @@ export function SortablePhotoGrid({
             </div>
           ) : null}
           {photo.status === "error" ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-1 text-center text-[10px] text-white">
-              {photo.errorMessage ?? "Falha no envio"}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-1 text-center text-[10px] text-white">
+              <span className="line-clamp-2">{photo.errorMessage ?? "Falha no envio"}</span>
+              {onRetry ? (
+                <button
+                  type="button"
+                  onClick={() => onRetry(photo.localId)}
+                  className="mt-1 rounded bg-white/20 px-1.5 py-0.5 text-[10px]"
+                >
+                  Tentar
+                </button>
+              ) : null}
             </div>
           ) : null}
           {index === 0 ? (
