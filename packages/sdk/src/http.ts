@@ -196,10 +196,7 @@ export class HttpClient {
     if (/^https?:\/\//i.test(target)) {
       return new URL(target);
     }
-    const origin =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000");
+    const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
     return new URL(target, origin);
   }
 }
