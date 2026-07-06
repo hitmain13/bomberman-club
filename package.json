@@ -3,19 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "packageManager": "bun@1.3.9",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "dev": "turbo run dev",
     "dev:web": "turbo run dev --filter=@bomberman/web",
     "dev:api": "turbo run dev --filter=@bomberman/api",
     "deploy:web": "vercel deploy --prod --yes 2>&1",
     "build": "turbo run build",
-    "lint": "biome check .",
+    "lint": "biome check --formatter-enabled=false .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
+    "format:check": "biome format .",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:e2e": "bun run --cwd apps/web test:e2e",
