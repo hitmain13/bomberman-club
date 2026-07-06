@@ -16,6 +16,15 @@ const config: NextConfig = {
       { protocol: "https", hostname: "**.supabase.co" },
     ],
   },
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "https://bomberman-api-s4ix.onrender.com";
+    return [
+      {
+        source: "/api/:path*",
+        destination: `${apiUrl.replace(/\/$/, "")}/:path*`,
+      },
+    ];
+  },
 };
 
 export default config;

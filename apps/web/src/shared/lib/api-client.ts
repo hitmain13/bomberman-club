@@ -16,10 +16,15 @@ export function setRefreshAccessToken(fn: () => Promise<string | null>): void {
   refreshAccessTokenFn = fn;
 }
 
-const baseUrl =
+const configuredBaseUrl =
   typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_URL
     ? process.env.NEXT_PUBLIC_API_URL
     : "http://localhost:3333";
+
+// No browser, prefere o proxy same-origin /api para cookies first-party.
+// No server/SSR mantem URL absoluta.
+const baseUrl =
+  typeof window !== "undefined" && !configuredBaseUrl.startsWith("/") ? "/api" : configuredBaseUrl;
 
 export const apiClient = createBombermanClient({
   baseUrl,
