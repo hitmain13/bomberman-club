@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense } from "react";
 
-import type { SightingPeriod } from "@bomberman/types";
+import { SightingPeriodSchema } from "@bomberman/types";
 
 import { Button } from "@/components/atoms/Button";
 import { Icon } from "@/components/atoms/Icon";
@@ -11,9 +11,11 @@ import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { PeriodTabs, SightingCard, useSightings } from "@/features/sightings";
 import { RequireAuth } from "@/shared/contexts/require-auth";
+import { parseEnumParam, useFilterParams } from "@/shared/hooks/use-filter-params";
 
 function Content(): JSX.Element {
-  const [period, setPeriod] = useState<SightingPeriod>("WEEK");
+  const { searchParams, setParam } = useFilterParams();
+  const period = parseEnumParam(searchParams.get("period"), SightingPeriodSchema, "WEEK");
   const { data, isLoading, error } = useSightings(period);
 
   return (
@@ -26,7 +28,7 @@ function Content(): JSX.Element {
           </Button>
         </Link>
       </header>
-      <PeriodTabs value={period} onChange={setPeriod} />
+      <PeriodTabs value={period} onChange={(next) => setParam("period", next, "WEEK")} />
       {isLoading ? (
         <StatePanel kind="loading" />
       ) : error ? (
@@ -54,7 +56,9 @@ export default function SightingsPage(): JSX.Element {
   return (
     <AppShell>
       <RequireAuth>
-        <Content />
+        <Suspense fallback={<StatePanel kind="loading" />}>
+          <Content />
+        </Suspense>
       </RequireAuth>
     </AppShell>
   );

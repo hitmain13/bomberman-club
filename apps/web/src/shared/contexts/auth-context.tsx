@@ -19,11 +19,11 @@ import {
   setRefreshAccessToken,
 } from "@/shared/lib/api-client";
 import { queryKeys } from "@/shared/lib/query-keys";
-import { refreshSession } from "@/shared/lib/refresh-session";
+import { refreshSession, refreshSessionWithRetry } from "@/shared/lib/refresh-session";
 import {
   clearPersistedSession,
   persistSession,
-  readPersistedSession,
+  readPersistedUserSnapshot,
 } from "@/shared/lib/session-persistence";
 
 interface AuthContextValue {
@@ -39,7 +39,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function restorePersistedSession(): { user: PrivateUser; accessToken: string } | null {
-  const persisted = readPersistedSession();
+  const persisted = readPersistedUserSnapshot();
   if (!persisted) {
     return null;
   }
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
     });
 
     void (async () => {
-      const session = await refreshSession();
+      const session = await refreshSessionWithRetry();
       if (cancelled) {
         return;
       }
@@ -106,11 +106,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
         return;
       }
 
-      const persisted = readPersistedSession();
-      if (persisted) {
-        setAccessToken(persisted.accessToken);
-        setUser(persisted.user);
-        queryClient.setQueryData(queryKeys.auth.me(), persisted.user);
+      const snapshot = readPersistedUserSnapshot();
+      if (snapshot) {
+        setAccessToken(snapshot.accessToken);
+        setUser(snapshot.user);
+        queryClient.setQueryData(queryKeys.auth.me(), snapshot.user);
         return;
       }
 
@@ -155,12 +155,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }): JSX.E
     (nextUser: PrivateUser) => {
       setUser(nextUser);
       queryClient.setQueryData(queryKeys.auth.me(), nextUser);
-      const persisted = readPersistedSession();
-      if (persisted) {
+      const snapshot = readPersistedUserSnapshot();
+      if (snapshot) {
         persistSession({
           user: nextUser,
-          accessToken: persisted.accessToken,
-          expiresIn: Math.max(1, Math.floor((persisted.expiresAt - Date.now()) / 1000)),
+          accessToken: snapshot.accessToken,
+          expiresIn: 900,
         });
       }
     },

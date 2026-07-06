@@ -42,7 +42,7 @@ export function RegisterForm({ className }: RegisterFormProps): JSX.Element {
       ) : null}
       <FormField
         label="Nome de usuário"
-        placeholder="speed.fabio"
+        placeholder="Seu usuário"
         autoComplete="username"
         errorMessage={errors.username?.message}
         {...register("username")}
@@ -50,7 +50,7 @@ export function RegisterForm({ className }: RegisterFormProps): JSX.Element {
       <FormField
         label="E-mail"
         type="email"
-        placeholder="seu@email.com"
+        placeholder="Seu e-mail"
         autoComplete="email"
         errorMessage={errors.email?.message}
         {...register("email")}
@@ -58,7 +58,7 @@ export function RegisterForm({ className }: RegisterFormProps): JSX.Element {
       <FormField
         label="Senha"
         type="password"
-        placeholder="••••••••"
+        placeholder="Sua senha"
         autoComplete="new-password"
         helperText="8+ caracteres com maiúscula, minúscula e número."
         errorMessage={errors.password?.message}
@@ -67,7 +67,7 @@ export function RegisterForm({ className }: RegisterFormProps): JSX.Element {
       <FormField
         label="Confirmar senha"
         type="password"
-        placeholder="••••••••"
+        placeholder="Confirme sua senha"
         autoComplete="new-password"
         errorMessage={errors.confirmPassword?.message}
         {...register("confirmPassword")}

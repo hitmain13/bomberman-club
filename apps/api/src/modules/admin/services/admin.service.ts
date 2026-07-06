@@ -2,7 +2,7 @@ import type { User } from "@prisma/client";
 
 import { ForbiddenError, NotFoundError } from "@/common/errors";
 import { authRepository } from "@/modules/auth/repositories/auth.repository";
-import { deleteObject } from "@/modules/uploads/utils/s3";
+import { uploadCleanupService } from "@/modules/uploads/services/upload-cleanup.service";
 
 import { type UploadWithOwner, adminRepository } from "../repositories/admin.repository";
 
@@ -58,12 +58,7 @@ export class AdminService {
   }
 
   async removeUpload(id: string): Promise<void> {
-    const upload = await adminRepository.findUploadById(id);
-    if (!upload) {
-      throw new NotFoundError("Upload", id);
-    }
-    await adminRepository.deleteUpload(id);
-    await deleteObject(upload.bucketKey);
+    await uploadCleanupService.removeUpload(id);
   }
 
   async listUsers(limit = 50, cursor?: string): Promise<UserListItem[]> {

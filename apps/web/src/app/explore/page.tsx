@@ -136,42 +136,119 @@ function SearchResults({ query, type }: { query: string; type: SearchType }): JS
   );
 }
 
-function BrowseAll({ onSeePeople }: { onSeePeople: () => void }): JSX.Element {
-  const { data, isLoading, error } = useExplorePeople({ sort: "FOLLOWERS" });
+function BrowseAll({
+  onSeePeople,
+  onSeeCars,
+  onSeeSightings,
+}: {
+  onSeePeople: () => void;
+  onSeeCars: () => void;
+  onSeeSightings: () => void;
+}): JSX.Element {
+  const featuredQuery = useExplorePeople({ sort: "FOLLOWERS" });
+  const recentPeopleQuery = useExplorePeople({ sort: "RECENT" });
+  const recentCarsQuery = useExploreCars({ sort: "NEWEST" });
+  const recentSightingsQuery = useSightings("ALL");
+
+  const featured = featuredQuery.data?.items.slice(0, 6) ?? [];
+  const recentPeople = recentPeopleQuery.data?.items.slice(0, 5) ?? [];
+  const recentCars = recentCarsQuery.data?.items.slice(0, 5) ?? [];
+  const recentSightings = recentSightingsQuery.data?.items.slice(0, 5) ?? [];
+
+  const isLoading =
+    featuredQuery.isLoading ||
+    recentPeopleQuery.isLoading ||
+    recentCarsQuery.isLoading ||
+    recentSightingsQuery.isLoading;
+
+  const hasError =
+    featuredQuery.error ||
+    recentPeopleQuery.error ||
+    recentCarsQuery.error ||
+    recentSightingsQuery.error;
 
   if (isLoading) {
     return <StatePanel kind="loading" />;
   }
-  if (error || !data) {
+  if (hasError) {
     return <StatePanel kind="error" />;
   }
-  if (data.items.length === 0) {
-    return <StatePanel kind="empty" title="Ainda não há membros para mostrar." />;
+  if (
+    featured.length === 0 &&
+    recentPeople.length === 0 &&
+    recentCars.length === 0 &&
+    recentSightings.length === 0
+  ) {
+    return <StatePanel kind="empty" title="Ainda não há conteúdo para mostrar." />;
   }
-
-  const featured = data.items.slice(0, 6);
-  const recent = data.items.slice(0, 5);
 
   return (
     <div className="flex flex-col gap-6">
-      <FeaturedPeopleRail people={featured} />
-      <section className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs uppercase tracking-wider text-fg-muted">Membros recentes</h2>
-          <button
-            type="button"
-            onClick={onSeePeople}
-            className="text-xs font-medium text-fg-secondary"
-          >
-            Ver todos
-          </button>
-        </div>
-        <ul className="flex flex-col gap-2">
-          {recent.map((person) => (
-            <PersonListItem key={person.id} person={person} />
-          ))}
-        </ul>
-      </section>
+      {featured.length > 0 ? <FeaturedPeopleRail people={featured} /> : null}
+
+      {recentCars.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs uppercase tracking-wider text-fg-muted">Carros recentes</h2>
+            <button
+              type="button"
+              onClick={onSeeCars}
+              className="text-xs font-medium text-fg-secondary"
+            >
+              Ver todos
+            </button>
+          </div>
+          <ul className="flex flex-col gap-3">
+            {recentCars.map((entry) => (
+              <li key={entry.car.id}>
+                <CarCard car={entry.car} owner={entry.owner} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {recentSightings.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs uppercase tracking-wider text-fg-muted">Flagrados recentes</h2>
+            <button
+              type="button"
+              onClick={onSeeSightings}
+              className="text-xs font-medium text-fg-secondary"
+            >
+              Ver todos
+            </button>
+          </div>
+          <ul className="flex flex-col gap-4">
+            {recentSightings.map((sighting) => (
+              <li key={sighting.id}>
+                <SightingCard sighting={sighting} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {recentPeople.length > 0 ? (
+        <section className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs uppercase tracking-wider text-fg-muted">Membros recentes</h2>
+            <button
+              type="button"
+              onClick={onSeePeople}
+              className="text-xs font-medium text-fg-secondary"
+            >
+              Ver todos
+            </button>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {recentPeople.map((person) => (
+              <PersonListItem key={person.id} person={person} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -460,7 +537,11 @@ function Content(): JSX.Element {
       {trimmed.length > 0 ? (
         <SearchResults query={trimmed} type={type} />
       ) : type === "ALL" ? (
-        <BrowseAll onSeePeople={() => setType("PEOPLE")} />
+        <BrowseAll
+          onSeePeople={() => setType("PEOPLE")}
+          onSeeCars={() => setType("CARS")}
+          onSeeSightings={() => setType("SIGHTINGS")}
+        />
       ) : type === "PEOPLE" ? (
         <BrowsePeople filters={peopleFilters} onFiltersChange={setPeopleFilters} />
       ) : type === "CARS" ? (

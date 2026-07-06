@@ -17,6 +17,7 @@
 - **M12** Feature 012-discovery: feed scoped (FORYOU/FOLLOWING/RECENT), ranking (4 métricas), search/explore (people/cars/sightings) + páginas /feed, /ranking, /explore.
 - **M13** Settings (tela 20) + QA final.
 - **Feature 013** Explore Social: navegação social completa (Pessoas/Carros/Flagrados) no Explorar, perfil público enriquecido (estatísticas reais + abas Sobre/Carros/Flagrados/Curtidas). Ver `docs/specs/013-explore-social/` e ADR 0008.
+- **Platform Improvements V1**: persistência de sessão (retry + snapshot), keep-alive Render, filtros na URL, cleanup S3 em deletes, compressão otimizada, Explorar "Tudo" agregado, fix upload múltiplo. ADRs 0009–0011.
 
 ## Métricas finais
 

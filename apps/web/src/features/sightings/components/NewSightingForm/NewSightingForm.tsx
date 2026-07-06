@@ -48,6 +48,7 @@ export function NewSightingForm({
   const autoCaptureTriggered = useRef(false);
   const geolocationRequested = useRef(false);
   const uploadChainRef = useRef(Promise.resolve());
+  const photosRef = useRef<PhotoDraftItem[]>([]);
   const [photos, setPhotos] = useState<PhotoDraftItem[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
@@ -73,6 +74,7 @@ export function NewSightingForm({
   const uploadIds = watch("uploadIds");
   const latitude = watch("latitude");
   const longitude = watch("longitude");
+  photosRef.current = photos;
   const hasLocation = latitude !== 0 || longitude !== 0;
   const hasPhotos = photos.length > 0;
   const allUploaded = photos.length > 0 && photos.every((photo) => photo.status === "done");
@@ -163,31 +165,22 @@ export function NewSightingForm({
 
   const addFiles = useCallback(
     (files: File[]): void => {
-      let batch: File[] = [];
-      let optimistic: PhotoDraftItem[] = [];
-      let shouldRequestLocation = false;
-
-      setPhotos((current) => {
-        const remaining = 10 - current.length;
-        batch = files.slice(0, remaining);
-        if (batch.length === 0) {
-          return current;
-        }
-
-        shouldRequestLocation = current.length === 0;
-        optimistic = batch.map((file) => ({
-          localId: createLocalId(),
-          preview: URL.createObjectURL(file),
-          uploadId: null,
-          status: "uploading" as const,
-        }));
-
-        return [...current, ...optimistic];
-      });
-
+      const current = photosRef.current;
+      const remaining = 10 - current.length;
+      const batch = files.slice(0, remaining);
       if (batch.length === 0) {
         return;
       }
+
+      const shouldRequestLocation = current.length === 0;
+      const optimistic = batch.map((file) => ({
+        localId: createLocalId(),
+        preview: URL.createObjectURL(file),
+        uploadId: null,
+        status: "uploading" as const,
+      }));
+
+      setPhotos([...current, ...optimistic]);
 
       if (shouldRequestLocation) {
         requestLocation();

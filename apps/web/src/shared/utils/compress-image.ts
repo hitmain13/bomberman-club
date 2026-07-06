@@ -1,5 +1,5 @@
-const MAX_EDGE = 1920;
-const DEFAULT_QUALITY = 0.85;
+const MAX_EDGE = 1600;
+const DEFAULT_QUALITY = 0.78;
 
 export interface CompressImageResult {
   file: File;
@@ -31,7 +31,8 @@ export async function compressImage(file: File): Promise<CompressImageResult> {
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
 
-    const outputType = file.type === "image/png" ? "image/webp" : file.type;
+    const outputType =
+      file.type === "image/png" || file.type === "image/jpeg" ? "image/webp" : file.type;
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob(resolve, outputType, DEFAULT_QUALITY);
     });

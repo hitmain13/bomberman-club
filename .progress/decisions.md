@@ -12,3 +12,6 @@ Decisões arquiteturais detalhadas vivem em `docs/architecture/adr/`. Este arqui
 | 0006 | LLM executora: composer-2.5-fast — regras maximamente explícitas |
 | 0007 | Validação Zod + `z.infer` em todo boundary; proibido `as`/`any`  |
 | 0008 | Explore Social: `discovery` como camada de leitura cross-context; correção de 3 violações de Prisma-fora-de-Repository; banner/último-acesso adiados (fora dos wireframes pixel) |
+| 0009 | Keep-alive Render: GitHub Actions cron + `ApiHeartbeat` client-side |
+| 0010 | `UploadCleanupService`: exclusão DB + S3 reutilizável (cars, sightings, admin, uploads) |
+| 0011 | Sessão resiliente (`refreshSessionWithRetry` + snapshot) e filtros na URL (`useFilterParams`) |

@@ -2,6 +2,8 @@ import type { CarInput, CarResponse } from "@bomberman/types";
 
 import { ForbiddenError, NotFoundError } from "@/common/errors";
 import { garagesService } from "@/modules/garages";
+import { uploadsCleanupRepository } from "@/modules/uploads/repositories/uploads-cleanup.repository";
+import { uploadCleanupService } from "@/modules/uploads/services/upload-cleanup.service";
 
 import { CarBuilder } from "../builders/car.builder";
 import { toCarResponse } from "../mappers/cars.mapper";
@@ -87,7 +89,9 @@ export class CarsService {
     if (!existing) {
       throw new NotFoundError("Car", id);
     }
+    const uploadIds = await uploadsCleanupRepository.collectCarUploadIds(id);
     await carsRepository.remove(id);
+    await uploadCleanupService.removeUploads(uploadIds);
   }
 }
 

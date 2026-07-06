@@ -55,6 +55,47 @@ export class HttpClient {
     return this.fetchImpl(input, init);
   }
 
+  async uploadRequest<TResponseSchema extends z.ZodTypeAny>(options: {
+    path: string;
+    body: FormData;
+    responseSchema: TResponseSchema;
+    skipAuthRetry?: boolean;
+  }): Promise<z.infer<TResponseSchema>> {
+    const response = await this.fetchImpl(`${this.baseUrl}${options.path}`, {
+      method: "POST",
+      credentials: "include",
+      headers: this.authHeader(),
+      body: options.body,
+    });
+
+    if (
+      response.status === 401 &&
+      !options.skipAuthRetry &&
+      this.refreshAccessToken &&
+      !options.path.startsWith("/auth/")
+    ) {
+      const refreshed = await this.tryRefreshAccessToken();
+      if (refreshed) {
+        return this.uploadRequest({ ...options, skipAuthRetry: true });
+      }
+      this.onUnauthorized?.();
+    } else if (response.status === 401 && !options.path.startsWith("/auth/")) {
+      this.onUnauthorized?.();
+    }
+
+    if (!response.ok) {
+      const rawError = (await safeJson(response)) as unknown;
+      const parsed = errorPayloadSchema.safeParse(rawError);
+      const payload: ApiErrorPayload = parsed.success
+        ? toErrorPayload(parsed.data.error)
+        : { code: "unknown_error", message: response.statusText };
+      throw new ApiError(response.status, payload);
+    }
+
+    const data = (await response.json()) as unknown;
+    return options.responseSchema.parse(data);
+  }
+
   async request<TResponseSchema extends z.ZodTypeAny>(
     options: RequestOptions<TResponseSchema>,
   ): Promise<z.infer<TResponseSchema>> {

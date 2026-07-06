@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense } from "react";
 
-import type { RankingMetric } from "@bomberman/types";
+import { type RankingMetric, RankingMetricSchema } from "@bomberman/types";
 
 import { Badge } from "@/components/atoms/Badge";
 import { StatePanel } from "@/components/organisms/StatePanel";
@@ -10,6 +10,7 @@ import { AppShell } from "@/components/templates/AppShell";
 import { useRanking } from "@/features/discovery";
 import { CarCard, formatRatio } from "@/features/garage";
 import { RequireAuth } from "@/shared/contexts/require-auth";
+import { parseEnumParam, useFilterParams } from "@/shared/hooks/use-filter-params";
 import { cn } from "@/shared/utils/cn";
 
 const METRICS: ReadonlyArray<{ value: RankingMetric; label: string; unit: string }> = [
@@ -20,7 +21,8 @@ const METRICS: ReadonlyArray<{ value: RankingMetric; label: string; unit: string
 ];
 
 function Content(): JSX.Element {
-  const [metric, setMetric] = useState<RankingMetric>("POWER");
+  const { searchParams, setParam } = useFilterParams();
+  const metric = parseEnumParam(searchParams.get("metric"), RankingMetricSchema, "POWER");
   const { data, isLoading, error } = useRanking(metric);
   const current = METRICS.find((item) => item.value === metric);
 
@@ -38,7 +40,7 @@ function Content(): JSX.Element {
               type="button"
               role="tab"
               aria-selected={active}
-              onClick={() => setMetric(item.value)}
+              onClick={() => setParam("metric", item.value, "POWER")}
               className={cn(
                 "h-9 px-4 rounded-pill border border-border-default bg-bg-surface text-sm text-fg-secondary whitespace-nowrap",
                 active && "bg-fg-primary text-fg-inverted border-fg-primary",
@@ -80,7 +82,9 @@ export default function RankingPage(): JSX.Element {
   return (
     <AppShell>
       <RequireAuth>
-        <Content />
+        <Suspense fallback={<StatePanel kind="loading" />}>
+          <Content />
+        </Suspense>
       </RequireAuth>
     </AppShell>
   );

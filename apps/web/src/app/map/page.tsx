@@ -1,14 +1,15 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { Suspense } from "react";
 
-import type { SightingPeriod } from "@bomberman/types";
+import { SightingPeriodSchema } from "@bomberman/types";
 
 import { StatePanel } from "@/components/organisms/StatePanel";
 import { AppShell } from "@/components/templates/AppShell";
 import { PeriodTabs, useSightings } from "@/features/sightings";
 import { RequireAuth } from "@/shared/contexts/require-auth";
+import { parseEnumParam, useFilterParams } from "@/shared/hooks/use-filter-params";
 
 const SightingsMap = dynamic(() => import("@/features/map").then((module) => module.SightingsMap), {
   ssr: false,
@@ -16,7 +17,8 @@ const SightingsMap = dynamic(() => import("@/features/map").then((module) => mod
 });
 
 function Content(): JSX.Element {
-  const [period, setPeriod] = useState<SightingPeriod>("WEEK");
+  const { searchParams, setParam } = useFilterParams();
+  const period = parseEnumParam(searchParams.get("period"), SightingPeriodSchema, "WEEK");
   const { data, isLoading, error } = useSightings(period);
 
   return (
@@ -25,7 +27,7 @@ function Content(): JSX.Element {
         <h1 className="text-lg font-semibold">Mapa</h1>
         <span className="text-xs text-fg-muted">{data?.items.length ?? 0} pins</span>
       </header>
-      <PeriodTabs value={period} onChange={setPeriod} />
+      <PeriodTabs value={period} onChange={(next) => setParam("period", next, "WEEK")} />
       {isLoading ? (
         <StatePanel kind="loading" />
       ) : error ? (
@@ -41,7 +43,9 @@ export default function MapPage(): JSX.Element {
   return (
     <AppShell>
       <RequireAuth>
-        <Content />
+        <Suspense fallback={<StatePanel kind="loading" />}>
+          <Content />
+        </Suspense>
       </RequireAuth>
     </AppShell>
   );

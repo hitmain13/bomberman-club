@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense } from "react";
 
-import type { FeedScope } from "@bomberman/types";
+import { FeedScopeSchema } from "@bomberman/types";
 
 import { Logo } from "@/components/atoms/Logo";
 import { StatePanel } from "@/components/organisms/StatePanel";
@@ -11,9 +11,11 @@ import { FeedTabs, useFeed } from "@/features/discovery";
 import { CarCard } from "@/features/garage";
 import { SightingCard } from "@/features/sightings";
 import { RequireAuth } from "@/shared/contexts/require-auth";
+import { parseEnumParam, useFilterParams } from "@/shared/hooks/use-filter-params";
 
 function Content(): JSX.Element {
-  const [scope, setScope] = useState<FeedScope>("RECENT");
+  const { searchParams, setParam } = useFilterParams();
+  const scope = parseEnumParam(searchParams.get("scope"), FeedScopeSchema, "RECENT");
   const { data, isLoading, error } = useFeed(scope);
 
   return (
@@ -21,7 +23,7 @@ function Content(): JSX.Element {
       <header className="flex items-center justify-between">
         <Logo size="md" />
       </header>
-      <FeedTabs value={scope} onChange={setScope} />
+      <FeedTabs value={scope} onChange={(next) => setParam("scope", next, "RECENT")} />
       {isLoading ? (
         <StatePanel kind="loading" />
       ) : error ? (
@@ -55,7 +57,9 @@ export default function FeedPage(): JSX.Element {
   return (
     <AppShell>
       <RequireAuth>
-        <Content />
+        <Suspense fallback={<StatePanel kind="loading" />}>
+          <Content />
+        </Suspense>
       </RequireAuth>
     </AppShell>
   );

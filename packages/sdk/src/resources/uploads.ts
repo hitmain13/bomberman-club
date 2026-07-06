@@ -8,16 +8,10 @@ export class UploadsResource {
   async upload(file: Blob, filename: string): Promise<UploadResponse> {
     const form = new FormData();
     form.append("file", file, filename);
-    const response = await this.http.fetch(`${this.http.baseUrl}/uploads`, {
-      method: "POST",
-      credentials: "include",
-      headers: this.http.authHeader(),
+    return this.http.uploadRequest({
+      path: "/uploads",
       body: form,
+      responseSchema: uploadResponseSchema,
     });
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
-    }
-    const data = (await response.json()) as unknown;
-    return uploadResponseSchema.parse(data);
   }
 }

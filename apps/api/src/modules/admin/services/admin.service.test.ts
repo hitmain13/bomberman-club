@@ -8,7 +8,6 @@ import { AdminService } from "./admin.service";
 vi.mock("../repositories/admin.repository", () => ({
   adminRepository: {
     findUploadById: vi.fn(),
-    deleteUpload: vi.fn(),
     findUserById: vi.fn(),
     banUser: vi.fn(),
     unbanUser: vi.fn(),
@@ -21,8 +20,10 @@ vi.mock("@/modules/auth/repositories/auth.repository", () => ({
   },
 }));
 
-vi.mock("@/modules/uploads/utils/s3", () => ({
-  deleteObject: vi.fn(),
+vi.mock("@/modules/uploads/services/upload-cleanup.service", () => ({
+  uploadCleanupService: {
+    removeUpload: vi.fn(),
+  },
 }));
 
 describe("AdminService", () => {
@@ -33,29 +34,23 @@ describe("AdminService", () => {
   });
 
   describe("removeUpload", () => {
-    it("removes database record before deleting object storage", async () => {
-      const order: string[] = [];
-      vi.mocked(adminRepository.findUploadById).mockResolvedValue({
-        id: "upload_1",
-        bucketKey: "u/user/photo.jpg",
-      } as never);
-      vi.mocked(adminRepository.deleteUpload).mockImplementation(async () => {
-        order.push("db");
-      });
-      const { deleteObject } = await import("@/modules/uploads/utils/s3");
-      vi.mocked(deleteObject).mockImplementation(async () => {
-        order.push("s3");
-      });
+    it("delegates to upload cleanup service", async () => {
+      const { uploadCleanupService } = await import(
+        "@/modules/uploads/services/upload-cleanup.service"
+      );
 
       await service.removeUpload("upload_1");
 
-      expect(order).toEqual(["db", "s3"]);
-      expect(adminRepository.deleteUpload).toHaveBeenCalledWith("upload_1");
-      expect(deleteObject).toHaveBeenCalledWith("u/user/photo.jpg");
+      expect(uploadCleanupService.removeUpload).toHaveBeenCalledWith("upload_1");
     });
 
-    it("throws when upload does not exist", async () => {
-      vi.mocked(adminRepository.findUploadById).mockResolvedValue(null);
+    it("propagates not found from cleanup service", async () => {
+      const { uploadCleanupService } = await import(
+        "@/modules/uploads/services/upload-cleanup.service"
+      );
+      vi.mocked(uploadCleanupService.removeUpload).mockRejectedValue(
+        new NotFoundError("Upload", "missing"),
+      );
 
       await expect(service.removeUpload("missing")).rejects.toBeInstanceOf(NotFoundError);
     });

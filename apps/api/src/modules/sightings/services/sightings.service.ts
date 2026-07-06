@@ -11,6 +11,8 @@ import { ForbiddenError, NotFoundError } from "@/common/errors";
 import { canManageSighting } from "@/common/policies/sighting.policy";
 import { commentsRepository } from "@/modules/social/repositories/comments.repository";
 import { likesRepository } from "@/modules/social/repositories/likes.repository";
+import { uploadsCleanupRepository } from "@/modules/uploads/repositories/uploads-cleanup.repository";
+import { uploadCleanupService } from "@/modules/uploads/services/upload-cleanup.service";
 import { getReverseGeocodeService } from "@/shared/geo/reverse-geocode";
 
 import { toSightingResponse } from "../mappers/sightings.mapper";
@@ -163,7 +165,9 @@ export class SightingsService {
     if (!canManageSighting(viewer, sighting.userId)) {
       throw new ForbiddenError("Você não pode remover este flagrado.");
     }
+    const uploadIds = await uploadsCleanupRepository.collectSightingUploadIds(id);
     await sightingsRepository.remove(id);
+    await uploadCleanupService.removeUploads(uploadIds);
   }
 }
 

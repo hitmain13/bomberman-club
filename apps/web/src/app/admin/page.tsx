@@ -187,6 +187,11 @@ function AdminContent(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-3">
+        <Link href="/explore">
+          <Button variant="ghost" size="sm" leadingIcon={<Icon name="arrow-left" />}>
+            Voltar
+          </Button>
+        </Link>
         <div>
           <h1 className="text-xl font-bold">Painel Administrativo</h1>
           <p className="text-sm text-fg-muted">Gerencie uploads e usuários</p>

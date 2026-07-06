@@ -8,6 +8,7 @@ import { ForbiddenError, NotFoundError, ValidationError } from "@/common/errors"
 import { uploadsRepository } from "../repositories/uploads.repository";
 import { type SupportedMime, detectMimeFromBytes } from "../utils/magic-number";
 import { putObject } from "../utils/s3";
+import { uploadCleanupService } from "./upload-cleanup.service";
 
 const MAX_SIZE_BYTES = 15 * 1024 * 1024;
 /** Limite do tier gratuito Cloudflare R2 (10 GB). */
@@ -87,7 +88,7 @@ export class UploadsService {
     if (upload.ownerId !== ownerId) {
       throw new ForbiddenError("Você não pode remover este upload.");
     }
-    await uploadsRepository.remove(id);
+    await uploadCleanupService.removeUpload(id);
   }
 }
 
